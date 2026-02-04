@@ -14,7 +14,7 @@ namespace Meta.XR.Movement.Utils
     /// Component that mirrors transforms from a target hierarchy to this hierarchy.
     /// </summary>
     [DefaultExecutionOrder(150)]
-    public class MirrorTransforms : MonoBehaviour
+    public class OG : MonoBehaviour
     {
         [BurstCompile]
         private struct GetPoseJob : IJobParallelForTransform
@@ -138,11 +138,20 @@ namespace Meta.XR.Movement.Utils
         private TransformAccessArray _bones;
         private TransformAccessArray _targetBones;
 
+        [SerializeField] private float _delaySeconds = 2f;
+
+        private Queue<NativeArray<NativeTransform>> _poseHistory;
+        private int _delayFrames;
+
+
         /// <summary>
         /// Initializes the transform arrays for mirroring when the component starts.
         /// </summary>
         public void Start()
         {
+            _delayFrames = Mathf.CeilToInt(_delaySeconds / Time.fixedDeltaTime);
+            _poseHistory = new Queue<NativeArray<NativeTransform>>(_delayFrames);
+
             if (!Application.isPlaying)
             {
                 return;
@@ -358,22 +367,45 @@ namespace Meta.XR.Movement.Utils
 
         private void UpdateJobs()
         {
+            
             var getBonesJob = new GetPoseJob
             {
                 IsLocal = _isLocal,
                 BonePoses = _bonePoses
             };
-            var copyBonesJob = new CopyPoseJob
+
+            var captureHandle = getBonesJob.Schedule(_targetBones);
+            captureHandle.Complete();   // must complete before copying
+
+            // Make a deep copy of this frame’s pose
+            var snapshot = new NativeArray<NativeTransform>(_bonePoses.Length, Allocator.Persistent);
+            snapshot.CopyFrom(_bonePoses);
+
+            _poseHistory.Enqueue(snapshot);
+
+            // If not enough frames yet do nothing (no mirroring)
+            if (_poseHistory.Count < _delayFrames)
+                return;
+
+            // Remove oldest snapshot
+            var delayedPose = _poseHistory.Dequeue();
+
+            // Run CopyPoseJob using the delayed snapshot
+            var copyJob = new CopyPoseJob
             {
                 IsLocal = _isLocal,
-                BonePoses = _bonePoses,
+                BonePoses = delayedPose,
                 MirrorPositions = _mirrorPositions,
                 MirrorRotations = _mirrorRotations,
                 MirrorScales = _mirrorScales
             };
-            var getBonesJobHandle = getBonesJob.Schedule(_targetBones);
-            copyBonesJob.Schedule(_bones, getBonesJobHandle).Complete();
+
+            copyJob.Schedule(_bones).Complete();
+
+            // Dispose the snapshot we just applied
+            delayedPose.Dispose();
         }
+
 
         private void ManualUpdate()
         {
@@ -413,13 +445,13 @@ namespace Meta.XR.Movement.Utils
         }
 
 #if UNITY_EDITOR
-        [UnityEditor.CustomEditor(typeof(MirrorTransforms)), UnityEditor.CanEditMultipleObjects]
+        [UnityEditor.CustomEditor(typeof(OG)), UnityEditor.CanEditMultipleObjects]
         public class MirrorTransformsEditor : UnityEditor.Editor
         {
             public override void OnInspectorGUI()
             {
                 base.OnInspectorGUI();
-                var mirrorTransforms = target as MirrorTransforms;
+                var mirrorTransforms = target as OG;
                 if (GUILayout.Button("Find Bone Pairs"))
                 {
                     if (mirrorTransforms != null)

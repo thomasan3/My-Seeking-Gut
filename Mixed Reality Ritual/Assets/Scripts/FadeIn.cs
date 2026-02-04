@@ -14,8 +14,11 @@ public class FadeIn : MonoBehaviour
     [Header("Toggle for Fade-in")] //Otherwise it will fade out
     [SerializeField] bool fadeIn;
 
+    [SerializeField] GameObject fan;
+
     void Start()
     {
+        fan.SetActive(false);
         //Make everything transparent & set render mode to fade
         PrepareAllObjectsForFade();
 
@@ -64,6 +67,12 @@ public class FadeIn : MonoBehaviour
     {
         for (int i = 0; i < objects.Length; i++)
         {
+            if (i == objects.Length-1)
+            {
+                Debug.Log("Activated fan");
+                fan.SetActive(true);
+            }
+
             float counter = 0f;
             float startAlpha = fadeIn ? 0f : 1f;
             float endAlpha = fadeIn ? 1f : 0f;
@@ -110,7 +119,6 @@ public class FadeIn : MonoBehaviour
                     Color c = graphicBase[g];
                     graphics[g].color = new Color(c.r, c.g, c.b, alpha);
                 }
-
                 yield return null;
             }
         }
