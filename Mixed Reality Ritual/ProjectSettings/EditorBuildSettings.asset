@@ -5,9 +5,12 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
-    path: Assets/Scenes/Lorelai.unity
+  - enabled: 0
+    path: Assets/Scenes/Final.unity
     guid: af18376dcda01de47b73bf821188aaf1
+  - enabled: 1
+    path: Assets/Scenes/Ariana.unity
+    guid: a36f27a761bebad4ab0cef689be23e3b
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: aef179e138b75774d8209f8d4ccaafb7, type: 2}
