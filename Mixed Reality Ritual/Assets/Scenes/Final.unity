@@ -2094,6 +2094,82 @@ MonoBehaviour:
   installationRoutineCheckpoint:
     _installationRoutineId: 
     _installationVariants: []
+--- !u!1 &387835634 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1507767883509144192, guid: e5494b81c39e65441b2a6eb4a8001f55, type: 3}
+  m_PrefabInstance: {fileID: 1014126068}
+  m_PrefabAsset: {fileID: 0}
+--- !u!54 &387835636
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 387835634}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &387835637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 387835634}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a1bc992571301d4a9602ac95ef4c71a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Oculus.Interaction::Oculus.Interaction.GrabInteractable
+  _interactorFilters: []
+  _maxInteractors: -1
+  _maxSelectingInteractors: -1
+  _data: {fileID: 0}
+  _pointableElement: {fileID: 0}
+  _rigidbody: {fileID: 387835636}
+  _grabSource: {fileID: 0}
+  _useClosestPointAsGrabSource: 0
+  _releaseDistance: 0
+  _resetGrabOnGrabsUpdated: 1
+  _physicsGrabbable: {fileID: 0}
+--- !u!65 &387835638
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 387835634}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.10907516, y: 0.20021835, z: 0.023111481}
+  m_Center: {x: 0.00000023914095, y: 0.0000000070335573, z: -0.000034436296}
 --- !u!1 &407512424
 GameObject:
   m_ObjectHideFlags: 0
@@ -4377,6 +4453,7 @@ GameObject:
   - component: {fileID: 798924028}
   - component: {fileID: 798924027}
   - component: {fileID: 798924026}
+  - component: {fileID: 798924029}
   m_Layer: 0
   m_Name: Game Manager
   m_TagString: Untagged
@@ -4430,6 +4507,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &798924029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 798924025}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1e15ee4d25228641a23c4214b893523, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::moveToScene
+  sceneName: Canal_scene
 --- !u!1 &809149097
 GameObject:
   m_ObjectHideFlags: 0
@@ -6087,7 +6177,16 @@ PrefabInstance:
     - {fileID: 9180388252296267716, guid: e5494b81c39e65441b2a6eb4a8001f55, type: 3}
     - {fileID: 46697956382119959, guid: e5494b81c39e65441b2a6eb4a8001f55, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1507767883509144192, guid: e5494b81c39e65441b2a6eb4a8001f55, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 387835638}
+    - targetCorrespondingSourceObject: {fileID: 1507767883509144192, guid: e5494b81c39e65441b2a6eb4a8001f55, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 387835637}
+    - targetCorrespondingSourceObject: {fileID: 1507767883509144192, guid: e5494b81c39e65441b2a6eb4a8001f55, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 387835636}
   m_SourcePrefab: {fileID: 100100000, guid: e5494b81c39e65441b2a6eb4a8001f55, type: 3}
 --- !u!4 &1019183559 stripped
 Transform:
