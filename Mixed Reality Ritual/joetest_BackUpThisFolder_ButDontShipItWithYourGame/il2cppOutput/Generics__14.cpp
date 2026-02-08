@@ -23565,7 +23565,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void BasicNode_1__ctor_m5F6BD5BB6499D84BA6B02
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #endif
-// Method Definition Index: 84394
+// Method Definition Index: 84398
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR BlendConstraintJob_t0143E21A1C165F021D2FC5DDDC05C71227AB4368 BlendConstraintJobBinder_1_Create_m5D6115B40FC7AC8CF36408787E878379C3B0DFB6_gshared (BlendConstraintJobBinder_1_tAFB6438E17A27FBBE89B1DE630923093FBC58B7B* __this, Animator_t8A52E42AE54F76681838FE9E632683EF3952E883* ___0_animator, BlendConstraintData_t4B7652BE08909FFEBFD59CFD3DFB5AA97E45C9E8* ___1_data, Component_t39FBE53E5EFCF4409111FB22C15FF73717632EC3* ___2_component, const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -23755,7 +23755,7 @@ IL_013f:
 		return L_71;
 	}
 }
-// Method Definition Index: 84395
+// Method Definition Index: 84399
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void BlendConstraintJobBinder_1_Destroy_m1665DAA9B91F96D91324DCB53917C75E9E1526D2_gshared (BlendConstraintJobBinder_1_tAFB6438E17A27FBBE89B1DE630923093FBC58B7B* __this, BlendConstraintJob_t0143E21A1C165F021D2FC5DDDC05C71227AB4368 ___0_job, const RuntimeMethod* method) 
 {
 	{
@@ -23763,7 +23763,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void BlendConstraintJobBinder_1_Destroy_m1665
 		return;
 	}
 }
-// Method Definition Index: 84396
+// Method Definition Index: 84400
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void BlendConstraintJobBinder_1__ctor_m26FE3F6668C125E619CE364015D2E59F6ACE0D46_gshared (BlendConstraintJobBinder_1_tAFB6438E17A27FBBE89B1DE630923093FBC58B7B* __this, const RuntimeMethod* method) 
 {
 	{
@@ -23779,7 +23779,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void BlendConstraintJobBinder_1__ctor_m26FE3F
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #endif
-// Method Definition Index: 84394
+// Method Definition Index: 84398
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR BlendConstraintJob_t0143E21A1C165F021D2FC5DDDC05C71227AB4368 BlendConstraintJobBinder_1_Create_mCD9339D8304D616CE99CF6263C10DF9291D7A0E9_gshared (BlendConstraintJobBinder_1_t82CA20FCB6B1C6266EB594BA394229FA7CB43154* __this, Animator_t8A52E42AE54F76681838FE9E632683EF3952E883* ___0_animator, Il2CppFullySharedGenericStruct* ___1_data, Component_t39FBE53E5EFCF4409111FB22C15FF73717632EC3* ___2_component, const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -23984,7 +23984,7 @@ IL_013f:
 		return L_86;
 	}
 }
-// Method Definition Index: 84395
+// Method Definition Index: 84399
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void BlendConstraintJobBinder_1_Destroy_m8E770470FB0538866628AE15F9DEA7DF3E2841F4_gshared (BlendConstraintJobBinder_1_t82CA20FCB6B1C6266EB594BA394229FA7CB43154* __this, BlendConstraintJob_t0143E21A1C165F021D2FC5DDDC05C71227AB4368 ___0_job, const RuntimeMethod* method) 
 {
 	{
@@ -23992,7 +23992,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void BlendConstraintJobBinder_1_Destroy_m8E77
 		return;
 	}
 }
-// Method Definition Index: 84396
+// Method Definition Index: 84400
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void BlendConstraintJobBinder_1__ctor_mA0DDFAC1393E33AA4791D17B8AF5E656E33C52D0_gshared (BlendConstraintJobBinder_1_t82CA20FCB6B1C6266EB594BA394229FA7CB43154* __this, const RuntimeMethod* method) 
 {
 	{
@@ -25422,7 +25422,7 @@ IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR bool Single_IsNaN_mFE637F6ECA9F76
 		return (bool)((((int32_t)((int32_t)(L_1&((int32_t)2147483647LL)))) > ((int32_t)((int32_t)2139095040)))? 1 : 0);
 	}
 }
-// Method Definition Index: 84669
+// Method Definition Index: 84673
 IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR Transform_tB27202C6F4E36D225EE28A13E4D662BF99785DB1* BlendConstraintData_get_constrainedObject_m2DEE74B5BB56354B63E87D30C88829CE2BF43B1B_inline (BlendConstraintData_t4B7652BE08909FFEBFD59CFD3DFB5AA97E45C9E8* __this, const RuntimeMethod* method) 
 {
 	{
@@ -25431,7 +25431,7 @@ IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR Transform_tB27202C6F4E36D225EE28A
 		return L_0;
 	}
 }
-// Method Definition Index: 84671
+// Method Definition Index: 84675
 IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR Transform_tB27202C6F4E36D225EE28A13E4D662BF99785DB1* BlendConstraintData_get_sourceObjectA_m8831D413B91D88835AB8FB46C598680232D55D03_inline (BlendConstraintData_t4B7652BE08909FFEBFD59CFD3DFB5AA97E45C9E8* __this, const RuntimeMethod* method) 
 {
 	{
@@ -25440,7 +25440,7 @@ IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR Transform_tB27202C6F4E36D225EE28A
 		return L_0;
 	}
 }
-// Method Definition Index: 84673
+// Method Definition Index: 84677
 IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR Transform_tB27202C6F4E36D225EE28A13E4D662BF99785DB1* BlendConstraintData_get_sourceObjectB_mD65AC6422CF81B0DDC30C74CA7B556834B974953_inline (BlendConstraintData_t4B7652BE08909FFEBFD59CFD3DFB5AA97E45C9E8* __this, const RuntimeMethod* method) 
 {
 	{
@@ -25449,7 +25449,7 @@ IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR Transform_tB27202C6F4E36D225EE28A
 		return L_0;
 	}
 }
-// Method Definition Index: 85145
+// Method Definition Index: 85149
 IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR AffineTransform_tA95AB5C8371DD1F9C9D7473023DEB9F790F722E6 AffineTransform_get_identity_m31F27B6469FA0A473296BB4E482DABCB5F3BF11D_inline (const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -25465,7 +25465,7 @@ IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR AffineTransform_tA95AB5C8371DD1F9
 		return L_0;
 	}
 }
-// Method Definition Index: 84683
+// Method Definition Index: 84687
 IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR bool BlendConstraintData_get_maintainPositionOffsets_mC4BCD8C3DF810513DCD0136C670299F89150B474_inline (BlendConstraintData_t4B7652BE08909FFEBFD59CFD3DFB5AA97E45C9E8* __this, const RuntimeMethod* method) 
 {
 	{
@@ -25505,7 +25505,7 @@ IL_0030:
 		return L_13;
 	}
 }
-// Method Definition Index: 84685
+// Method Definition Index: 84689
 IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR bool BlendConstraintData_get_maintainRotationOffsets_m2B138350D9245EC1744C7AA4E78484C042193752_inline (BlendConstraintData_t4B7652BE08909FFEBFD59CFD3DFB5AA97E45C9E8* __this, const RuntimeMethod* method) 
 {
 	{

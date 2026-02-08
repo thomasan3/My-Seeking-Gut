@@ -7,6 +7,15 @@
 
 
 
+extern void ConstellationMovement_Start_m4C3475CE8365765837137973D3C879DE805FC19B (void);
+extern void ConstellationMovement_GeneratePlanet_m3F23C4F2FAE1ED59FB849645898AF89ECFF90106 (void);
+extern void ConstellationMovement_QuadPick_m040D02AA11F35EE3008240A1E5CC919AA82E4C00 (void);
+extern void ConstellationMovement_RandomPerpendicular_m3D31655B45C4F6C3CFEEC12272E31F6CA5ECE15D (void);
+extern void ConstellationMovement_Update_m10AFD8DD7799E588180041F7B06F5261C395B14A (void);
+extern void ConstellationMovement__ctor_m9C59BE286303E9A1A10A2683C513ABD311449255 (void);
+extern void ConstellationSpawner_Start_mA4F1B243DA5916B84683F741BEF92CCF5AC2CD48 (void);
+extern void ConstellationSpawner_Update_mFF9835FF1265AF4491E09BBA98A963A4D48A938C (void);
+extern void ConstellationSpawner__ctor_m23EE71AE6736E5DEA56CEABEB8C539A149734C0E (void);
 extern void FadeIn_Start_m7A23DF928B97429F2CBD887A3A4CED58BDD61F35 (void);
 extern void FadeIn_PrepareAllObjectsForFade_m18B550F6F9715B0E698170582AC8B6FEB7C53935 (void);
 extern void FadeIn_FadeRoutine_m558EF3558F82A412B180F98FCFA121907441336F (void);
@@ -430,8 +439,17 @@ extern void PerlinNoiseTexture__ctor_m8F41A66F830AF7F48AF1CCA5D66E5027AFD3D3A9 (
 extern void PerlinNoiseTexture__cctor_m737C69DD066893ABAB7858E8296075EC3626BAE5 (void);
 extern void __JobReflectionRegistrationOutput__1221673671587648887_CreateJobReflectionData_m1F483A9B7E258CE82A38F403CB25E2A8E08B8C7D (void);
 extern void __JobReflectionRegistrationOutput__1221673671587648887_EarlyInit_m0E9D8082FECF3A06E063A71B0013E9029931CC67 (void);
-static Il2CppMethodPointer s_methodPointers[423] = 
+static Il2CppMethodPointer s_methodPointers[432] = 
 {
+	ConstellationMovement_Start_m4C3475CE8365765837137973D3C879DE805FC19B,
+	ConstellationMovement_GeneratePlanet_m3F23C4F2FAE1ED59FB849645898AF89ECFF90106,
+	ConstellationMovement_QuadPick_m040D02AA11F35EE3008240A1E5CC919AA82E4C00,
+	ConstellationMovement_RandomPerpendicular_m3D31655B45C4F6C3CFEEC12272E31F6CA5ECE15D,
+	ConstellationMovement_Update_m10AFD8DD7799E588180041F7B06F5261C395B14A,
+	ConstellationMovement__ctor_m9C59BE286303E9A1A10A2683C513ABD311449255,
+	ConstellationSpawner_Start_mA4F1B243DA5916B84683F741BEF92CCF5AC2CD48,
+	ConstellationSpawner_Update_mFF9835FF1265AF4491E09BBA98A963A4D48A938C,
+	ConstellationSpawner__ctor_m23EE71AE6736E5DEA56CEABEB8C539A149734C0E,
 	FadeIn_Start_m7A23DF928B97429F2CBD887A3A4CED58BDD61F35,
 	FadeIn_PrepareAllObjectsForFade_m18B550F6F9715B0E698170582AC8B6FEB7C53935,
 	FadeIn_FadeRoutine_m558EF3558F82A412B180F98FCFA121907441336F,
@@ -862,13 +880,22 @@ extern void GetPoseJob_Execute_m1DC0869384013F6B6E20550B54039CB2B7579EDB_Adjusto
 extern void CopyPoseJob_Execute_mE47691BDBF96F3CFCFD24FDAB2361193876D62EE_AdjustorThunk (void);
 static Il2CppTokenAdjustorThunkPair s_adjustorThunks[4] = 
 {
-	{ 0x06000136, GetPoseJob_Execute_m8D707D03C2E70798E844A17DD08BE1C36875D73F_AdjustorThunk },
-	{ 0x06000137, CopyPoseJob_Execute_m13EC49E4892E059D59CF6A517995D7AF78B6EBB1_AdjustorThunk },
-	{ 0x06000140, GetPoseJob_Execute_m1DC0869384013F6B6E20550B54039CB2B7579EDB_AdjustorThunk },
-	{ 0x06000141, CopyPoseJob_Execute_mE47691BDBF96F3CFCFD24FDAB2361193876D62EE_AdjustorThunk },
+	{ 0x0600013F, GetPoseJob_Execute_m8D707D03C2E70798E844A17DD08BE1C36875D73F_AdjustorThunk },
+	{ 0x06000140, CopyPoseJob_Execute_m13EC49E4892E059D59CF6A517995D7AF78B6EBB1_AdjustorThunk },
+	{ 0x06000149, GetPoseJob_Execute_m1DC0869384013F6B6E20550B54039CB2B7579EDB_AdjustorThunk },
+	{ 0x0600014A, CopyPoseJob_Execute_mE47691BDBF96F3CFCFD24FDAB2361193876D62EE_AdjustorThunk },
 };
-static const int32_t s_InvokerIndices[423] = 
+static const int32_t s_InvokerIndices[432] = 
 {
+	18229,
+	13863,
+	1910,
+	12365,
+	18229,
+	18229,
+	18229,
+	18229,
+	18229,
 	18229,
 	18229,
 	2657,
@@ -1297,7 +1324,7 @@ IL2CPP_EXTERN_C const Il2CppCodeGenModule g_AssemblyU2DCSharp_CodeGenModule;
 const Il2CppCodeGenModule g_AssemblyU2DCSharp_CodeGenModule = 
 {
 	"Assembly-CSharp.dll",
-	423,
+	432,
 	s_methodPointers,
 	4,
 	s_adjustorThunks,

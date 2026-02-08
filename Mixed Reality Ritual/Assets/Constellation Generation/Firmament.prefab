@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &420287815608093122
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7454024870571425245}
+  - component: {fileID: 4711838903060259251}
+  m_Layer: 0
+  m_Name: Firmament
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7454024870571425245
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 420287815608093122}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4711838903060259251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 420287815608093122}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d5a24968068be44792b9bdf3634e84f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ConstellationMovement
+  debug_mode: 0
+  debug_mesh: {fileID: 3552214685121729614, guid: 131cae9a143e2ec488154b549c9f00ba, type: 3}
+  orbitals: 3
+  min_planet_count: 1
+  max_planet_count: 10
+  main_camera: {fileID: 0}
+  planet_prefabs:
+  - {fileID: 2806689769964155127, guid: 7210571b41dc0b64489e4fd9f832b929, type: 3}
+  - {fileID: 6537451920094841008, guid: 150422592c6ae084e98b6199be15fc0b, type: 3}
+  - {fileID: 7961214108213636841, guid: 27e7a6f214aba18499ea07cb0131d32a, type: 3}
+  - {fileID: 8832090138019828309, guid: 38dc4f9a3c7f5da49b50d5ae0779a57e, type: 3}
+  - {fileID: 3885215324249765450, guid: a4e57f2bab3322a459258e2972c0bfe0, type: 3}
+  - {fileID: 7562447237217536673, guid: 5dcb1c6e624d4b14f85afad75ddb6d02, type: 3}
+  - {fileID: 6105934261288074442, guid: 05eb90c5bdd55594fa238c640525fc70, type: 3}
+  - {fileID: 4880924811599396768, guid: 0ee4acd6bc786af439e32d835ffcc1c8, type: 3}
+  base_dist: 2
+  dist_growth_factor: 7
+  dist_scatter: 0.2
+  dist_scatter_growth_factor: 1.1
+  base_radius: 5
+  radius_growth_factor: 12
+  radius_scatter: 0.2
+  radius_scatter_growth_factor: 1.1
+  base_period: 5
+  period_growth_factor: 5
+  period_scatter: 0.5
+  period_scatter_growth_factor: 1.1
+  base_au: 1.5
+  au_growth_factor: 13
+  au_scatter: 0.4
+  au_scatter_growth_factor: 1.2
+  base_size: 0.5
+  size_growth_factor: 15
+  size_scatter: 0.3
+  size_scatter_growth_factor: 1.5
+  base_year: 4
+  year_growth_factor: 4
+  year_scatter: 0.3
+  year_scatter_growth_factor: 1.2
