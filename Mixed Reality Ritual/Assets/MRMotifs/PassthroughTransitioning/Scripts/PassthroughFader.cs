@@ -10,47 +10,89 @@ using UnityEngine.UI;
 
 namespace MRMotifs.PassthroughTransitioning
 {
+    /// <summary>
+    /// A unified passthrough fader that supports both Selective and Underlay modes.
+    /// Select the mode in the inspector via the Passthrough Viewing Mode property.
+    /// </summary>
     [MetaCodeSample("MRMotifs-PassthroughTransitioning")]
     public class PassthroughFader : MonoBehaviour
     {
-        private enum FadeDirection { Normal, RightToLeft, TopToBottom, InsideOut }
-        private enum PassthroughViewingMode { Underlay, Selective }
-        private enum FaderState { MR, VR, InTransition }
+        /// <summary>
+        /// The direction in which the fade effect will occur.
+        /// </summary>
+        private enum FadeDirection
+        {
+            Normal,
+            RightToLeft,
+            TopToBottom,
+            InsideOut
+        }
 
+        /// <summary>
+        /// The viewing mode for passthrough. Select "Underlay" to have the effect apply over the entire view
+        /// or "Selective" to limit it to a sphere defined by selectiveDistance.
+        /// </summary>
+        private enum PassthroughViewingMode
+        {
+            Underlay,
+            Selective
+        }
+
+        /// <summary>
+        /// Internal state of the fader determined by the target alpha.
+        /// </summary>
+        private enum FaderState
+        {
+            MR,
+            VR,
+            InTransition
+        }
+
+        /// <summary>
+        /// The fader state is derived from _targetAlpha.
+        /// </summary>
         private FaderState State => Mathf.Approximately(m_targetAlpha, 1f) ? FaderState.MR :
             Mathf.Approximately(m_targetAlpha, 0f) ? FaderState.VR :
             FaderState.InTransition;
 
         [Header("Passthrough Fader Settings")]
-        [SerializeField] private PassthroughViewingMode passthroughViewingMode = PassthroughViewingMode.Selective;
+        [Tooltip("Select Underlay to fade the entire view or Selective for a limited sphere.")]
+        [SerializeField]
+        private PassthroughViewingMode passthroughViewingMode = PassthroughViewingMode.Selective;
+
+        [Tooltip("Size/range of the passthrough fader sphere (used in Selective mode).")]
         [Range(0.01f, 100f)]
-        [SerializeField] private float selectiveDistance = 5f;
-        [SerializeField] private float fadeSpeed = 1f;
-        [SerializeField] private FadeDirection fadeDirection = FadeDirection.TopToBottom;
+        [SerializeField]
+        private float selectiveDistance = 5f;
+
+        [Tooltip("The speed of the fade effect.")]
+        [SerializeField]
+        private float fadeSpeed = 1f;
+
+        [Tooltip("The direction of the fade effect.")]
+        [SerializeField]
+        private FadeDirection fadeDirection = FadeDirection.TopToBottom;
 
         [Header("Fade Events")]
-        [SerializeField] private UnityEvent onStartFadeIn = new();
-        [SerializeField] private UnityEvent onStartFadeOut = new();
-        [SerializeField] private UnityEvent onFadeInComplete = new();
-        [SerializeField] private UnityEvent onFadeOutComplete = new();
+        [Tooltip("Event triggered when the fade in starts.")]
+        [SerializeField]
+        private UnityEvent onStartFadeIn = new();
+
+        [Tooltip("Event triggered when the fade out starts.")]
+        [SerializeField]
+        private UnityEvent onStartFadeOut = new();
+
+        [Tooltip("Event triggered when the fade in has ended.")]
+        [SerializeField]
+        private UnityEvent onFadeInComplete = new();
+
+        [Tooltip("Event triggered when the fade out has ended.")]
+        [SerializeField]
+        private UnityEvent onFadeOutComplete = new();
 
         [Header("Input")]
-        [SerializeField] private bool allowUIFallback = true;
-        [SerializeField] private bool enableControllerToggle = true;
-        [SerializeField] private OVRInput.RawButton controllerToggleRaw = OVRInput.RawButton.X;
-        [SerializeField] private bool blockWhileInTransition = true;
-
-        [Header("VR World Toggle")]
-        [SerializeField] private GameObject introVrWorld;                  // drag INTRO_VR_WORLD here
-        [SerializeField] private bool startInPassthrough = true;
-        [SerializeField] private bool disableVrWorldWhenInPassthrough = true;
-
-        [Header("Auto Transition On Start")]
-        [SerializeField] private bool autoTransitionToVR = true;          // turn this on
-        [SerializeField] private float autoTransitionDelay = 10f;          // 10 seconds default
-
-        // internal flags
-        private bool m_enableVrWorldAfterFadeOut = false;
+        [SerializeField] private bool allowUIFallback = true; // keep UI button working if present
+        [SerializeField] private OVRInput.Button toggleButton = OVRInput.Button.Three; // X on left controller
 
         private OVRPassthroughLayer m_oVRPassthroughLayer;
         private Camera m_mainCamera;
@@ -62,6 +104,14 @@ namespace MRMotifs.PassthroughTransitioning
         private float m_targetAlpha;
         private const float FADE_TOLERANCE = 0.001f;
 
+        [Header("Controller Toggle")]
+        [SerializeField] private bool enableControllerToggle = true;
+
+        [SerializeField] private OVRInput.RawButton controllerToggleRaw = OVRInput.RawButton.X;
+
+        // Optional: prevent toggling when you’re in the middle of fading
+        [SerializeField] private bool blockWhileInTransition = true;
+
         private static readonly int s_invertedAlpha = Shader.PropertyToID("_InvertedAlpha");
         private static readonly int s_direction = Shader.PropertyToID("_FadeDirection");
 
@@ -69,13 +119,15 @@ namespace MRMotifs.PassthroughTransitioning
         {
             m_mainCamera = Camera.main;
             if (m_mainCamera != null)
+            {
                 m_skyboxBackgroundColor = m_mainCamera.backgroundColor;
+            }
 
+            // Disable premultiplied alpha blending for better underlay blending.
             OVRManager.eyeFovPremultipliedAlphaModeEnabled = false;
 
             m_meshRenderer = GetComponent<MeshRenderer>();
-            if (m_meshRenderer != null)
-                m_material = m_meshRenderer.material;
+            m_material = m_meshRenderer.material;
 
             m_menuPanel = FindAnyObjectByType<MenuPanel>();
             if (allowUIFallback && m_menuPanel != null)
@@ -90,38 +142,24 @@ namespace MRMotifs.PassthroughTransitioning
 
             SetupPassthrough();
 
-            if (startInPassthrough)
-                ForceStartInMR();
-
 #if UNITY_ANDROID
             CheckIfPassthroughIsRecommended();
 #endif
         }
 
-        private void Start()
-        {
-            // Auto transition after X seconds
-            if (startInPassthrough && autoTransitionToVR)
-                StartCoroutine(AutoTransitionRoutine());
-        }
-
-        private IEnumerator AutoTransitionRoutine()
-        {
-            yield return new WaitForSeconds(autoTransitionDelay);
-
-            // Only run if we're still in MR and not already transitioning
-            if (State == FaderState.MR)
-                TransitionToVR();
-        }
-
         private void Update()
         {
             if (!enableControllerToggle) return;
-            if (blockWhileInTransition && State == FaderState.InTransition) return;
+
+            if (blockWhileInTransition && State == FaderState.InTransition)
+                return;
 
             if (OVRInput.GetDown(controllerToggleRaw))
+            {
                 TogglePassthrough();
+            }
         }
+
 
         private void OnDestroy()
         {
@@ -132,24 +170,10 @@ namespace MRMotifs.PassthroughTransitioning
                 m_oVRPassthroughLayer.passthroughLayerResumed.RemoveListener(OnPassthroughLayerResumed);
         }
 
-        private void ForceStartInMR()
-        {
-            m_oVRPassthroughLayer.enabled = true;
-            m_targetAlpha = 1f;
 
-            if (m_material != null)
-                m_material.SetFloat(s_invertedAlpha, 1f);
-
-            if (passthroughViewingMode == PassthroughViewingMode.Underlay && m_mainCamera != null)
-            {
-                m_mainCamera.clearFlags = CameraClearFlags.SolidColor;
-                m_mainCamera.backgroundColor = Color.clear;
-            }
-
-            if (introVrWorld != null && disableVrWorldWhenInPassthrough)
-                introVrWorld.SetActive(false);
-        }
-
+        /// <summary>
+        /// Sets up the passthrough based on the selected viewing mode.
+        /// </summary>
         private void SetupPassthrough()
         {
             if (passthroughViewingMode == PassthroughViewingMode.Underlay)
@@ -158,13 +182,16 @@ namespace MRMotifs.PassthroughTransitioning
                 transform.localScale = new Vector3(maxCamView, maxCamView, maxCamView);
                 m_meshRenderer.enabled = false;
             }
-            else
+            else // Selective
             {
                 transform.localScale = new Vector3(selectiveDistance, selectiveDistance, selectiveDistance);
                 m_meshRenderer.enabled = true;
             }
         }
 
+        /// <summary>
+        /// Checks if passthrough is recommended and adjusts the camera and material settings.
+        /// </summary>
         private void CheckIfPassthroughIsRecommended()
         {
             if (m_mainCamera == null) return;
@@ -193,13 +220,127 @@ namespace MRMotifs.PassthroughTransitioning
             }
         }
 
-        // ---- NEW: explicit transition helpers ----
-        public void TransitionToVR()
+        /// <summary>
+        /// Called (for example, by a UI button) to toggle between passthrough states.
+        /// </summary>
+        public void TogglePassthrough()
         {
             UpdateFadeDirection();
 
-            // Enable VR world only AFTER fade finishes (so it’s “fade to black → reveal”)
-            m_enableVrWorldAfterFadeOut = true;
+            switch (State)
+            {
+                case FaderState.MR:
+                    if (passthroughViewingMode == PassthroughViewingMode.Underlay)
+                    {
+                        m_meshRenderer.enabled = true;
+                        m_mainCamera.clearFlags = CameraClearFlags.Skybox;
+                        m_mainCamera.backgroundColor = m_skyboxBackgroundColor;
+                    }
+
+                    m_targetAlpha = 0;
+                    onStartFadeOut?.Invoke();
+                    StopAllCoroutines();
+                    StartCoroutine(FadeToTarget());
+                    break;
+
+                case FaderState.VR:
+                    m_oVRPassthroughLayer.enabled = true;
+                    onStartFadeIn?.Invoke();
+                    break;
+
+                case FaderState.InTransition:
+                    m_targetAlpha = Mathf.Approximately(m_targetAlpha, 0f) ? 1f : 0f;
+                    var fadeEvent = Mathf.Approximately(m_targetAlpha, 0f) ? onStartFadeOut : onStartFadeIn;
+                    fadeEvent?.Invoke();
+                    StartCoroutine(FadeToTarget());
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        /// <summary>
+        /// Updates the shader’s fade direction property.
+        /// </summary>
+        private void UpdateFadeDirection()
+        {
+            m_material.SetInt(s_direction, (int)fadeDirection);
+        }
+
+        /// <summary>
+        /// Listener for when the passthrough layer is resumed.
+        /// </summary>
+        private void OnPassthroughLayerResumed(OVRPassthroughLayer passthroughLayer)
+        {
+            if (passthroughViewingMode == PassthroughViewingMode.Underlay)
+            {
+                m_meshRenderer.enabled = true;
+            }
+
+            m_targetAlpha = 1;
+            StopAllCoroutines();
+            StartCoroutine(FadeToTarget());
+        }
+
+        /// <summary>
+        /// Fades the material’s alpha toward the target value.
+        /// </summary>
+        private IEnumerator FadeToTarget()
+        {
+            var currentAlpha = m_material.GetFloat(s_invertedAlpha);
+            while (Mathf.Abs(currentAlpha - m_targetAlpha) > FADE_TOLERANCE)
+            {
+                currentAlpha = Mathf.MoveTowards(currentAlpha, m_targetAlpha, fadeSpeed * Time.deltaTime);
+                m_material.SetFloat(s_invertedAlpha, currentAlpha);
+                yield return null;
+            }
+
+            if (Mathf.Abs(m_targetAlpha - 1f) < FADE_TOLERANCE)
+            {
+                if (passthroughViewingMode == PassthroughViewingMode.Underlay)
+                {
+                    m_mainCamera.clearFlags = CameraClearFlags.SolidColor;
+                    m_mainCamera.backgroundColor = Color.clear;
+                }
+
+                onFadeInComplete?.Invoke();
+            }
+            else
+            {
+                m_oVRPassthroughLayer.enabled = false;
+                if (passthroughViewingMode == PassthroughViewingMode.Underlay)
+                {
+                    m_mainCamera.clearFlags = CameraClearFlags.Skybox;
+                    m_mainCamera.backgroundColor = m_skyboxBackgroundColor;
+                }
+
+                onFadeOutComplete?.Invoke();
+            }
+
+            m_meshRenderer.enabled = (passthroughViewingMode != PassthroughViewingMode.Underlay);
+        }
+        public void ForceMR()
+        {
+            StopAllCoroutines();
+
+            m_oVRPassthroughLayer.enabled = true;
+            m_targetAlpha = 1f;
+
+            if (m_material != null)
+                m_material.SetFloat(s_invertedAlpha, 1f);
+
+            if (passthroughViewingMode == PassthroughViewingMode.Underlay && m_mainCamera != null)
+            {
+                m_mainCamera.clearFlags = CameraClearFlags.SolidColor;
+                m_mainCamera.backgroundColor = Color.clear;
+            }
+
+            onFadeInComplete?.Invoke();
+        }
+
+        public void ForceVR()
+        {
+            UpdateFadeDirection();
 
             if (passthroughViewingMode == PassthroughViewingMode.Underlay)
             {
@@ -214,99 +355,5 @@ namespace MRMotifs.PassthroughTransitioning
             StartCoroutine(FadeToTarget());
         }
 
-        public void TransitionToMR()
-        {
-            UpdateFadeDirection();
-
-            m_enableVrWorldAfterFadeOut = false;
-
-            m_oVRPassthroughLayer.enabled = true;
-            onStartFadeIn?.Invoke();
-            StopAllCoroutines();
-            StartCoroutine(FadeToTarget());
-        }
-
-        public void TogglePassthrough()
-        {
-            switch (State)
-            {
-                case FaderState.MR:
-                    TransitionToVR();
-                    break;
-
-                case FaderState.VR:
-                    TransitionToMR();
-                    break;
-
-                case FaderState.InTransition:
-                    // optional: ignore mid-transition toggles
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        private void UpdateFadeDirection()
-        {
-            if (m_material != null)
-                m_material.SetInt(s_direction, (int)fadeDirection);
-        }
-
-        private void OnPassthroughLayerResumed(OVRPassthroughLayer passthroughLayer)
-        {
-            if (passthroughViewingMode == PassthroughViewingMode.Underlay)
-                m_meshRenderer.enabled = true;
-
-            m_targetAlpha = 1;
-            StopAllCoroutines();
-            StartCoroutine(FadeToTarget());
-        }
-
-        private IEnumerator FadeToTarget()
-        {
-            var currentAlpha = m_material.GetFloat(s_invertedAlpha);
-
-            while (Mathf.Abs(currentAlpha - m_targetAlpha) > FADE_TOLERANCE)
-            {
-                currentAlpha = Mathf.MoveTowards(currentAlpha, m_targetAlpha, fadeSpeed * Time.deltaTime);
-                m_material.SetFloat(s_invertedAlpha, currentAlpha);
-                yield return null;
-            }
-
-            // If we ended at MR (passthrough visible)
-            if (Mathf.Abs(m_targetAlpha - 1f) < FADE_TOLERANCE)
-            {
-                if (passthroughViewingMode == PassthroughViewingMode.Underlay)
-                {
-                    m_mainCamera.clearFlags = CameraClearFlags.SolidColor;
-                    m_mainCamera.backgroundColor = Color.clear;
-                }
-
-                onFadeInComplete?.Invoke();
-
-                if (disableVrWorldWhenInPassthrough && introVrWorld != null)
-                    introVrWorld.SetActive(false);
-            }
-            else
-            {
-                // We ended at VR (passthrough fully gone)
-                m_oVRPassthroughLayer.enabled = false;
-
-                if (passthroughViewingMode == PassthroughViewingMode.Underlay)
-                {
-                    m_mainCamera.clearFlags = CameraClearFlags.Skybox;
-                    m_mainCamera.backgroundColor = m_skyboxBackgroundColor;
-                }
-
-                onFadeOutComplete?.Invoke();
-
-                // IMPORTANT: turn on VR world here (after fade-out completed)
-                if (m_enableVrWorldAfterFadeOut && introVrWorld != null)
-                    introVrWorld.SetActive(true);
-            }
-
-            m_meshRenderer.enabled = (passthroughViewingMode != PassthroughViewingMode.Underlay);
-        }
     }
 }

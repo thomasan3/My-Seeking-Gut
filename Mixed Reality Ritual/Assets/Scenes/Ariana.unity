@@ -609,6 +609,7 @@ MonoBehaviour:
   playerHead: {fileID: 747421260}
   doppelgangerRoot: {fileID: 474063999}
   doppelgangerChest: {fileID: 1080788560}
+  minWorldY: 0
   doppelFadeDuration: 6
   doppelFadeCurve:
     serializedVersion: 2
@@ -636,6 +637,9 @@ MonoBehaviour:
     m_RotationOrder: 4
   keepDoppelCenteredInOrb: 1
   doppelLocalOffset: {x: 0, y: 0, z: 0}
+  spinDoppelWithOrbDuringFade: 1
+  keepDoppelSpinningUntilAbsorb: 1
+  turnOffOnAbsorb: {fileID: 0}
   onDoppelgangerFadeIn:
     m_PersistentCalls:
       m_Calls: []
@@ -724,6 +728,11 @@ MonoBehaviour:
   absorbHeight: -0.05
   followPlayer: 0
   followLerp: 8
+  alignDoppelToUserAfterAbsorb: 1
+  doppelChestYOffsetFromHead: -0.55
+  postAbsorbLowerDuration: 2
+  facePlayerAfterAbsorb: 1
+  faceTurnSpeed: 8
   autoStart: 1
 --- !u!4 &113647786
 Transform:
@@ -12827,7 +12836,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1812555925
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12857,14 +12866,10 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   allowUIFallback: 1
+  toggleButton: 4
   enableControllerToggle: 1
   controllerToggleRaw: 256
   blockWhileInTransition: 1
-  introVrWorld: {fileID: 2008179574}
-  startInPassthrough: 1
-  disableVrWorldWhenInPassthrough: 1
-  autoTransitionToVR: 1
-  autoTransitionDelay: 10
 --- !u!4 &1812555926
 Transform:
   m_ObjectHideFlags: 0
@@ -14317,7 +14322,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2008179575
 Transform:
   m_ObjectHideFlags: 0
