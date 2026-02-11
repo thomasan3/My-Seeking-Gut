@@ -5,6 +5,10 @@ using UnityEngine.Events;
 
 public class OrbIntroSequence : MonoBehaviour
 {
+    [SerializeField] private FadingUniversal fader;
+    [SerializeField] private GameObject doppelgangerMesh;
+    [SerializeField] private float playerTravelDistance;
+
     [Header("References")]
     [Tooltip("PIVOT / MOVER. Recommended: Neb_orb_Pivot (empty parent).")]
     public Transform nebOrb;
@@ -20,10 +24,6 @@ public class OrbIntroSequence : MonoBehaviour
 
     [Tooltip("Assign the actual Chest or UpperChest bone transform (NOT neck). Used for centering + absorb target.")]
     public Transform doppelgangerChest;
-
-    [Header("World Ground Clamp")]
-    [Tooltip("Orb and post-absorb doppel will never go below this world Y.")]
-    public float minWorldY = 0f;
 
     [Header("Doppelganger Fade (built-in, no FadeIn.cs)")]
     [Tooltip("Seconds to fade invisible -> visible. Try 3–8 for a slow 'forming' look.")]
@@ -52,12 +52,6 @@ public class OrbIntroSequence : MonoBehaviour
     [Header("Events")]
     public UnityEvent onDoppelgangerFadeIn = new();
     public UnityEvent onAbsorbStart = new();
-
-    [Header("Start Placement (world-anchored unless followPlayer is enabled)")]
-    public float startForward = 4.0f;
-    public float startHeight = 2.2f;
-    public float startRight = 0.0f;
-    public bool snapOrbOnStart = true;
 
     [Header("Phase Durations")]
     public float hoverDuration = 3.0f;
@@ -170,11 +164,7 @@ public class OrbIntroSequence : MonoBehaviour
         if (spinVisual == null)
             spinVisual = nebOrb;
 
-        if (snapOrbOnStart)
-            PlaceOrbStart();
-
         spinVisual.localScale = Vector3.one * scaleStart;
-        KeepOutside(scaleStart);
 
         if (doppelgangerRoot != null)
             doppelgangerRoot.SetActive(false);
@@ -183,61 +173,26 @@ public class OrbIntroSequence : MonoBehaviour
             m_sequence = StartCoroutine(Sequence());
     }
 
-    private void PlaceOrbStart()
-    {
-        nebOrb.position = GetRelativePos(startForward, startHeight, startRight);
-        nebOrb.rotation = Quaternion.LookRotation(-FlattenForward(playerHead.forward), Vector3.up);
-        nebOrb.position = ClampMinY(nebOrb.position);
-    }
-
     private IEnumerator Sequence()
     {
         m_doppelFadeComplete = false;
+        Vector3 startAnchor = nebOrb.position;
 
-        Vector3 startAnchor = GetRelativePos(startForward, startHeight, startRight);
-        startAnchor = ClampMinY(startAnchor);
+        yield return HoverPhase(hoverDuration, nebOrb.position);
 
-        nebOrb.position = startAnchor;
-        KeepOutside(scaleStart);
-
-        yield return HoverPhase(hoverDuration, startAnchor);
-
-        Vector3 descendAnchor = GetRelativePos(descendForward, descendHeight, descendRight);
-        descendAnchor = ClampMinY(descendAnchor);
-
-        yield return MovePhase(descendDuration, startAnchor, descendAnchor);
-
-        yield return GrowAndSpinUpPhase(growAndSpinUpDuration, descendAnchor);
+        yield return GrowAndSpinUpPhase(growAndSpinUpDuration, nebOrb.position);
 
         if (doppelgangerRoot != null)
         {
-            CacheDoppelMaterials();
-            PrepareDoppelInvisibleNoFlash();
-
             doppelgangerRoot.SetActive(true);
-            onDoppelgangerFadeIn?.Invoke();
-
-            yield return RevealDoppelWhileOrbLives(doppelFadeDuration);
-
-            m_doppelFadeComplete = true;
+            fader.StartFadeRenderer(doppelgangerMesh,doppelFadeDuration,1,0);
         }
 
-        onAbsorbStart?.Invoke();
-
-        Vector3 absorbPos =
-            (doppelgangerChest != null) ? doppelgangerChest.position :
-            (absorbTarget != null) ? absorbTarget.position :
-            GetRelativePos(absorbForward, absorbHeight, 0);
-
-        absorbPos = ClampMinY(absorbPos);
-
-        yield return AbsorbPhase(absorbDuration, nebOrb.position, absorbPos);
+        yield return AbsorbPhase(absorbDuration, nebOrb.position, doppelgangerChest.position);
 
         if (turnOffOnAbsorb != null)
             turnOffOnAbsorb.SetActive(false);
 
-        if (alignDoppelToUserAfterAbsorb)
-            yield return AlignDoppelToUserY_Smooth(postAbsorbLowerDuration);
 
         if (facePlayerAfterAbsorb)
             yield return FaceDoppelToPlayer_Speed(faceTurnSpeed);
@@ -248,69 +203,26 @@ public class OrbIntroSequence : MonoBehaviour
 
     private IEnumerator HoverPhase(float duration, Vector3 anchor)
     {
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
+        float farthestZ = playerHead.position.z;;
+        float maxZ = playerTravelDistance+farthestZ;
 
-            if (followPlayer)
-                anchor = Vector3.Lerp(anchor, GetRelativePos(startForward, startHeight, startRight), Time.deltaTime * followLerp);
+        while (farthestZ < maxZ)
+        {
+            if (playerHead.position.z > farthestZ) {farthestZ = playerHead.position.z;}
 
             float bob = Mathf.Sin(Time.time * hoverBobSpeed) * hoverBobAmplitude;
-            nebOrb.position = ClampMinY(anchor + Vector3.up * bob);
+
+            nebOrb.position = anchor + Vector3.up * bob + Vector3.forward*Mathf.Lerp(nebOrb.position.z, farthestZ, followLerp);
 
             float pulse = 1f + GetHeartbeatPulse() * heartbeatStrength;
             float visualScale = scaleStart * pulse;
 
             spinVisual.localScale = Vector3.one * visualScale;
-            KeepOutside(visualScale);
 
             SpinSelf(spinIdle);
 
-            if (keepDoppelCenteredInOrb)
-                MoveDoppelToOrbCenter();
-
             yield return null;
         }
-
-        nebOrb.position = ClampMinY(anchor);
-        spinVisual.localScale = Vector3.one * scaleStart;
-        KeepOutside(scaleStart);
-    }
-
-    private IEnumerator MovePhase(float duration, Vector3 fromAnchor, Vector3 toAnchor)
-    {
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            float a = Smooth01(t / duration);
-
-            if (followPlayer)
-                toAnchor = GetRelativePos(descendForward, descendHeight, descendRight);
-
-            Vector3 basePos = Vector3.Lerp(fromAnchor, toAnchor, a);
-            float bob = Mathf.Sin(Time.time * hoverBobSpeed) * (hoverBobAmplitude * 0.35f);
-
-            nebOrb.position = ClampMinY(basePos + Vector3.up * bob);
-
-            float pulse = 1f + GetHeartbeatPulse() * heartbeatStrength;
-            float visualScale = scaleStart * pulse;
-
-            spinVisual.localScale = Vector3.one * visualScale;
-            KeepOutside(visualScale);
-
-            SpinSelf(spinIdle);
-
-            if (keepDoppelCenteredInOrb)
-                MoveDoppelToOrbCenter();
-
-            yield return null;
-        }
-
-        nebOrb.position = ClampMinY(toAnchor);
-        spinVisual.localScale = Vector3.one * scaleStart;
-        KeepOutside(scaleStart);
     }
 
     private IEnumerator GrowAndSpinUpPhase(float duration, Vector3 anchor)
@@ -321,11 +233,8 @@ public class OrbIntroSequence : MonoBehaviour
             t += Time.deltaTime;
             float u = Mathf.Clamp01(t / duration);
 
-            if (followPlayer)
-                anchor = Vector3.Lerp(anchor, GetRelativePos(descendForward, descendHeight, descendRight), Time.deltaTime * followLerp);
-
             float bob = Mathf.Sin(Time.time * (hoverBobSpeed * 0.8f)) * (hoverBobAmplitude * 0.25f);
-            nebOrb.position = ClampMinY(anchor + Vector3.up * bob);
+            nebOrb.position = anchor + Vector3.up * bob;
 
             float sRamp = scaleRamp.Evaluate(u);
             float baseScale = Mathf.Lerp(scaleStart, scaleCharged, sRamp);
@@ -334,46 +243,16 @@ public class OrbIntroSequence : MonoBehaviour
             float visualScale = baseScale * pulse;
 
             spinVisual.localScale = Vector3.one * visualScale;
-            KeepOutside(visualScale);
 
             float r = spinRamp.Evaluate(u);
             float spin = Mathf.Lerp(spinIdle, spinCharged, r);
             SpinSelf(spin);
 
-            if (keepDoppelCenteredInOrb)
-                MoveDoppelToOrbCenter();
-
             yield return null;
         }
 
-        nebOrb.position = ClampMinY(anchor);
+        nebOrb.position = anchor;
         spinVisual.localScale = Vector3.one * scaleCharged;
-        KeepOutside(scaleCharged);
-    }
-
-    private IEnumerator RevealDoppelWhileOrbLives(float duration)
-    {
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            float u = Mathf.Clamp01(t / duration);
-            float shaped = doppelFadeCurve.Evaluate(u);
-
-            SpinSelf(spinCharged);
-
-            if (keepDoppelCenteredInOrb)
-                MoveDoppelToOrbCenter();
-
-            if (spinDoppelWithOrbDuringFade && doppelgangerRoot != null)
-                doppelgangerRoot.transform.rotation = spinVisual.rotation;
-
-            SetDoppelAlpha(shaped);
-
-            yield return null;
-        }
-
-        SetDoppelAlpha(1f);
     }
 
     private IEnumerator AbsorbPhase(float duration, Vector3 startPos, Vector3 targetPos)
@@ -384,13 +263,12 @@ public class OrbIntroSequence : MonoBehaviour
             t += Time.deltaTime;
             float a = Smooth01(t / duration);
 
-            nebOrb.position = ClampMinY(Vector3.Lerp(startPos, targetPos, a));
+            nebOrb.position = Vector3.Lerp(startPos, targetPos, a);
 
             SpinSelf(spinCharged);
 
             float visualScale = Mathf.Lerp(scaleCharged, scaleAbsorbEnd, a);
             spinVisual.localScale = Vector3.one * visualScale;
-            KeepOutside(visualScale);
 
             if (keepDoppelCenteredInOrb)
                 MoveDoppelToOrbCenter();
@@ -400,75 +278,7 @@ public class OrbIntroSequence : MonoBehaviour
 
             yield return null;
         }
-
-        nebOrb.position = ClampMinY(targetPos);
         spinVisual.localScale = Vector3.one * scaleAbsorbEnd;
-        KeepOutside(scaleAbsorbEnd);
-    }
-
-    private void CacheDoppelMaterials()
-    {
-        m_doppelMats.Clear();
-        m_doppelBaseColors.Clear();
-
-        if (doppelgangerRoot == null) return;
-
-        var renderers = doppelgangerRoot.GetComponentsInChildren<Renderer>(true);
-        foreach (var r in renderers)
-        {
-            var mats = r.materials; 
-            foreach (var m in mats)
-            {
-                if (m == null) continue;
-                m_doppelMats.Add(m);
-                m_doppelBaseColors.Add(ReadColor(m));
-                ForceMaterialTransparentIfPossible(m);
-            }
-        }
-    }
-
-    private void PrepareDoppelInvisibleNoFlash()
-    {
-        SetDoppelAlpha(0f);
-        if (keepDoppelCenteredInOrb)
-            MoveDoppelToOrbCenter();
-    }
-
-    private void SetDoppelAlpha(float a)
-    {
-        for (int i = 0; i < m_doppelMats.Count; i++)
-        {
-            var m = m_doppelMats[i];
-            var baseC = m_doppelBaseColors[i];
-            WriteColor(m, new Color(baseC.r, baseC.g, baseC.b, a));
-        }
-    }
-
-    private static Color ReadColor(Material m)
-    {
-        if (m.HasProperty(ID_BaseColor)) return m.GetColor(ID_BaseColor);
-        if (m.HasProperty(ID_Color)) return m.GetColor(ID_Color);
-        return Color.white;
-    }
-
-    private static void WriteColor(Material m, Color c)
-    {
-        if (m.HasProperty(ID_BaseColor)) m.SetColor(ID_BaseColor, c);
-        else if (m.HasProperty(ID_Color)) m.SetColor(ID_Color, c);
-    }
-
-    private static void ForceMaterialTransparentIfPossible(Material m)
-    {
-        if (m.HasProperty("_Surface")) m.SetFloat("_Surface", 1f); // 0=Opaque, 1=Transparent
-        if (m.HasProperty("_ZWrite")) m.SetFloat("_ZWrite", 0f);
-        if (m.HasProperty("_AlphaClip")) m.SetFloat("_AlphaClip", 0f);
-
-        if (m.HasProperty("_SrcBlend")) m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        if (m.HasProperty("_DstBlend")) m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        if (m.HasProperty("_DstBlendAlpha")) m.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        if (m.HasProperty("_SrcBlendAlpha")) m.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
-
-        m.renderQueue = 3000;
     }
 
     private void MoveDoppelToOrbCenter()
@@ -476,12 +286,11 @@ public class OrbIntroSequence : MonoBehaviour
         if (doppelgangerRoot == null) return;
 
         Vector3 orbCenter = nebOrb.position + nebOrb.TransformVector(doppelLocalOffset);
-        orbCenter = ClampMinY(orbCenter);
 
         if (doppelgangerChest != null)
         {
             Vector3 delta = orbCenter - doppelgangerChest.position;
-            doppelgangerRoot.transform.position = ClampMinY(doppelgangerRoot.transform.position + delta);
+            doppelgangerRoot.transform.position = doppelgangerRoot.transform.position + delta;
         }
         else
         {
@@ -489,34 +298,6 @@ public class OrbIntroSequence : MonoBehaviour
         }
     }
 
-    private IEnumerator AlignDoppelToUserY_Smooth(float duration)
-    {
-        if (doppelgangerRoot == null || playerHead == null || doppelgangerChest == null) yield break;
-
-        float desiredChestY = Mathf.Max(minWorldY, playerHead.position.y + doppelChestYOffsetFromHead);
-        float deltaY = desiredChestY - doppelgangerChest.position.y;
-
-        Vector3 startPos = doppelgangerRoot.transform.position;
-        Vector3 endPos = startPos + new Vector3(0, deltaY, 0);
-        endPos = ClampMinY(endPos);
-
-        if (duration <= 0f)
-        {
-            doppelgangerRoot.transform.position = endPos;
-            yield break;
-        }
-
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            float a = Smooth01(t / duration);
-            doppelgangerRoot.transform.position = ClampMinY(Vector3.Lerp(startPos, endPos, a));
-            yield return null;
-        }
-
-        doppelgangerRoot.transform.position = endPos;
-    }
 
     private IEnumerator FaceDoppelToPlayer_Speed(float degPerSecond)
     {
@@ -583,30 +364,6 @@ public class OrbIntroSequence : MonoBehaviour
         forward.y = 0f;
         if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
         return forward.normalized;
-    }
-
-    private void KeepOutside(float visualScale)
-    {
-        if (playerHead == null) return;
-
-        float radius = Mathf.Max(0.001f, baseOrbRadiusMeters * visualScale);
-        float minDist = radius + cameraSafetyMarginMeters;
-
-        Vector3 camPos = playerHead.position;
-        Vector3 dir = nebOrb.position - camPos;
-
-        float dist = dir.magnitude;
-        if (dist < 0.0001f) dir = FlattenForward(playerHead.forward);
-        else dir /= dist;
-
-        if (dist < minDist)
-            nebOrb.position = ClampMinY(camPos + dir * minDist);
-    }
-
-    private Vector3 ClampMinY(Vector3 p)
-    {
-        if (p.y < minWorldY) p.y = minWorldY;
-        return p;
     }
 
     private static float Smooth01(float x)
