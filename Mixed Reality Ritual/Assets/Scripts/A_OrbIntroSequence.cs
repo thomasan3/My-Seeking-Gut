@@ -15,7 +15,7 @@ public class A_OrbIntroSequence : MonoBehaviour
     [Header("World Ground Clamp")]
     public float minWorldY = 0f;
 
-    [Header("Doppel Fade")]
+    [Header("Doppelganger Fade")]
     public float doppelFadeDuration = 6f;
     public AnimationCurve doppelFadeCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
     public bool keepDoppelCenteredInOrb = true;
@@ -28,7 +28,7 @@ public class A_OrbIntroSequence : MonoBehaviour
     public UnityEvent onDoppelgangerFadeIn = new();
     public UnityEvent onAbsorbStart = new();
 
-    [Header("Start Placement (fallback if lure disabled)")]
+    [Header("Start Placement")]
     public float startForward = 4.0f;
     public float startHeight = 2.2f;
     public float startRight = 0.0f;
@@ -75,6 +75,10 @@ public class A_OrbIntroSequence : MonoBehaviour
     public float absorbForward = 0.6f;
     public float absorbHeight = -0.2f;
 
+    [Header("Follow Player")]
+    public bool followPlayer = false;
+    public float followLerp = 8f;
+
     [Header("Post-Absorb Doppel Alignment")]
     public bool alignDoppelToUserAfterAbsorb = true;
     public float doppelChestYOffsetFromHead = -0.55f;
@@ -84,34 +88,29 @@ public class A_OrbIntroSequence : MonoBehaviour
     public bool facePlayerAfterAbsorb = true;
     public float faceTurnSpeed = 8f;
 
-    [Header("Lure: Right travel -> Slide to center -> Center travel -> Stop")]
-    public bool enableLure = true;
+    [Header("Lure: Right -> Center")]
+    public bool enableRightToCenterLure = true;
+    public bool skipHoverAndDescendAfterLure = true;
 
     public float lureStartRight = 1.4f;
     public float lureStartForward = 2.8f;
     public float lureHeightAboveHead = 1.2f;
 
-    public float lureForwardSpeed = 0.35f;
-
-    public float lureRightTravelSeconds = 10.0f;
-    public float lureSlideToCenterSeconds = 5.0f;
-    public float lureCenterTravelSeconds = 5.0f;
-
-    public float lureEndRight = 0.0f;
-    public float lureEndHeight = 1.4f;
-
-    public float lureMinSpacing = 2.2f;
-    public float lureBackAwayStrength = 2.2f;
-    public float lureMaxBackAwaySpeed = 1.2f;
-
+    public float lureMoveSeconds = 10.0f;
     public float lureStartDistance = 2.2f;
     public float lureForceStartAfterSeconds = 120f;
 
-    [Header("Grow Spacing")]
-    public float growExtraSpacing = 0.8f;
+    public float lureMinSpacing = 2.0f;
+    public float lureBackAwayStrength = 2.2f;
+    public float lureMaxBackAwaySpeed = 1.2f;
 
-    [Header("Sequence Start After Lure")]
-    public bool skipHoverAndDescendAfterLure = true;
+    public float lureEndForward = 3.5f;
+    public float lureEndRight = 0.0f;
+    public float lureEndHeight = 1.4f;
+    public float lureExtraLowering = 0.3f;
+
+    [Header("Grow Spacing")]
+    public float growExtraSpacing = 0.6f;
 
     [Header("Debug")]
     public bool autoStart = true;
@@ -124,10 +123,10 @@ public class A_OrbIntroSequence : MonoBehaviour
     private static readonly int ID_BaseColor = Shader.PropertyToID("_BaseColor");
     private static readonly int ID_Color = Shader.PropertyToID("_Color");
 
-    private Vector3 m_lockForward;
-    private Vector3 m_lockRight;
-    private Vector3 m_lureStartHeadPos;
-    private Vector3 m_lureStoppedPos;
+    private Vector3 m_lureStartWorld;
+    private Vector3 m_lureEndWorld;
+    private Vector3 m_lureForward;
+    private Vector3 m_lureRight;
 
     private void Awake()
     {
@@ -166,10 +165,11 @@ public class A_OrbIntroSequence : MonoBehaviour
         if (spinVisual == null)
             spinVisual = nebOrb;
 
-        if (!enableLure && snapOrbOnStart)
+        if (snapOrbOnStart)
             PlaceOrbStart();
 
         spinVisual.localScale = Vector3.one * scaleStart;
+        EnforceMinDistance(scaleStart, lureMinSpacing);
 
         if (doppelgangerRoot != null)
             doppelgangerRoot.SetActive(false);
@@ -186,12 +186,13 @@ public class A_OrbIntroSequence : MonoBehaviour
 
     private IEnumerator Sequence()
     {
-        if (enableLure)
-            yield return LurePhase();
+        if (enableRightToCenterLure)
+            yield return RightToCenterLurePhase();
 
         Vector3 startAnchor = ClampMinY(nebOrb.position);
+        EnforceMinDistance(scaleStart, lureMinSpacing);
 
-        if (!enableLure || !skipHoverAndDescendAfterLure)
+        if (!enableRightToCenterLure || !skipHoverAndDescendAfterLure)
         {
             yield return HoverPhase(hoverDuration, startAnchor);
 
@@ -237,81 +238,63 @@ public class A_OrbIntroSequence : MonoBehaviour
         nebOrb.gameObject.SetActive(false);
     }
 
-    private IEnumerator LurePhase()
+    private IEnumerator RightToCenterLurePhase()
     {
-        m_lockForward = FlattenForward(playerHead.forward);
-        m_lockRight = Vector3.Cross(Vector3.up, m_lockForward).normalized;
-        m_lureStartHeadPos = playerHead.position;
+        m_lureForward = FlattenForward(playerHead.forward);
+        m_lureRight = Vector3.Cross(Vector3.up, m_lureForward).normalized;
 
-        float totalForwardTravelTime = Mathf.Max(0f, lureRightTravelSeconds + lureSlideToCenterSeconds + lureCenterTravelSeconds);
+        Vector3 headAtStart = playerHead.position;
+
+        m_lureStartWorld = headAtStart
+                           + m_lureRight * lureStartRight
+                           + m_lureForward * lureStartForward
+                           + Vector3.up * lureHeightAboveHead;
+
+        m_lureEndWorld = headAtStart
+                         + m_lureForward * lureEndForward
+                         + m_lureRight * lureEndRight
+                         + Vector3.up * lureEndHeight;
+
+        m_lureStartWorld = ClampMinY(m_lureStartWorld);
+        m_lureEndWorld = ClampMinY(m_lureEndWorld);
+
+        nebOrb.position = m_lureStartWorld;
 
         float t = 0f;
+        float after = 0f;
 
-        while (t < totalForwardTravelTime)
+        while (true)
         {
-            t += Time.deltaTime;
+            SpinSelf(spinIdle);
 
-            float forwardTravel = lureStartForward + lureForwardSpeed * t;
+            float u = Mathf.Clamp01(t / Mathf.Max(0.0001f, lureMoveSeconds));
+            float s = Smooth01(u);
 
-            float rightOffset;
-            float heightOffset;
+            Vector3 end = m_lureEndWorld + Vector3.down * (lureExtraLowering * s);
+            Vector3 desired = Vector3.Lerp(m_lureStartWorld, end, s);
 
-            if (t <= lureRightTravelSeconds)
-            {
-                rightOffset = lureStartRight;
-                heightOffset = lureHeightAboveHead;
-            }
-            else if (t <= lureRightTravelSeconds + lureSlideToCenterSeconds)
-            {
-                float u = (t - lureRightTravelSeconds) / Mathf.Max(0.0001f, lureSlideToCenterSeconds);
-                float s = Smooth01(u);
-                rightOffset = Mathf.Lerp(lureStartRight, lureEndRight, s);
-                heightOffset = Mathf.Lerp(lureHeightAboveHead, lureEndHeight, s);
-            }
-            else
-            {
-                rightOffset = lureEndRight;
-                heightOffset = lureEndHeight;
-            }
-
-            Vector3 desired = m_lureStartHeadPos
-                              + m_lockForward * forwardTravel
-                              + m_lockRight * rightOffset
-                              + Vector3.up * heightOffset;
-
-            float bob = Mathf.Sin(Time.time * hoverBobSpeed) * (hoverBobAmplitude * 0.2f);
+            float bob = Mathf.Sin(Time.time * hoverBobSpeed) * (hoverBobAmplitude * 0.25f);
             desired += Vector3.up * bob;
 
             nebOrb.position = ClampMinY(Vector3.Lerp(nebOrb.position, desired, Time.deltaTime * 4f));
-            nebOrb.rotation = Quaternion.LookRotation(-m_lockForward, Vector3.up);
-
-            SpinSelf(spinIdle);
 
             EnforceMinDistance(scaleStart, lureMinSpacing);
 
-            yield return null;
-        }
-
-        m_lureStoppedPos = nebOrb.position;
-
-        float wait = 0f;
-        while (true)
-        {
-            wait += Time.deltaTime;
-
-            nebOrb.position = ClampMinY(m_lureStoppedPos);
-            nebOrb.rotation = Quaternion.LookRotation(-m_lockForward, Vector3.up);
-
-            SpinSelf(spinIdle);
-
-            EnforceMinDistance(scaleStart, lureMinSpacing);
+            nebOrb.rotation = Quaternion.LookRotation(-m_lureForward, Vector3.up);
 
             float dist = Vector3.Distance(playerHead.position, nebOrb.position);
-            bool closeEnough = dist <= lureStartDistance;
-            bool forced = wait >= lureForceStartAfterSeconds;
-
-            if (closeEnough || forced)
-                yield break;
+            if (u >= 1f)
+            {
+                after += Time.deltaTime;
+                bool closeEnough = dist <= lureStartDistance;
+                bool forced = after >= lureForceStartAfterSeconds;
+                if (closeEnough || forced)
+                    yield break;
+            }
+            else
+            {
+                t += Time.deltaTime;
+            }
 
             yield return null;
         }
@@ -324,6 +307,9 @@ public class A_OrbIntroSequence : MonoBehaviour
         {
             t += Time.deltaTime;
 
+            if (followPlayer)
+                anchor = Vector3.Lerp(anchor, GetRelativePos(startForward, startHeight, startRight), Time.deltaTime * followLerp);
+
             float bob = Mathf.Sin(Time.time * hoverBobSpeed) * hoverBobAmplitude;
             nebOrb.position = ClampMinY(anchor + Vector3.up * bob);
 
@@ -331,7 +317,6 @@ public class A_OrbIntroSequence : MonoBehaviour
             float visualScale = scaleStart * pulse;
 
             spinVisual.localScale = Vector3.one * visualScale;
-
             EnforceMinDistance(visualScale, lureMinSpacing);
 
             SpinSelf(spinIdle);
@@ -353,7 +338,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         while (t < duration)
         {
             t += Time.deltaTime;
-            float a = Smooth01(t / Mathf.Max(0.0001f, duration));
+            float a = Smooth01(t / duration);
+
+            if (followPlayer)
+                toAnchor = GetRelativePos(descendForward, descendHeight, descendRight);
 
             Vector3 basePos = Vector3.Lerp(fromAnchor, toAnchor, a);
             float bob = Mathf.Sin(Time.time * hoverBobSpeed) * (hoverBobAmplitude * 0.35f);
@@ -364,7 +352,6 @@ public class A_OrbIntroSequence : MonoBehaviour
             float visualScale = scaleStart * pulse;
 
             spinVisual.localScale = Vector3.one * visualScale;
-
             EnforceMinDistance(visualScale, lureMinSpacing);
 
             SpinSelf(spinIdle);
@@ -386,7 +373,7 @@ public class A_OrbIntroSequence : MonoBehaviour
         while (t < duration)
         {
             t += Time.deltaTime;
-            float u = Mathf.Clamp01(t / Mathf.Max(0.0001f, duration));
+            float u = Mathf.Clamp01(t / duration);
 
             float bob = Mathf.Sin(Time.time * (hoverBobSpeed * 0.8f)) * (hoverBobAmplitude * 0.25f);
             nebOrb.position = ClampMinY(anchor + Vector3.up * bob);
@@ -425,7 +412,7 @@ public class A_OrbIntroSequence : MonoBehaviour
         while (t < duration)
         {
             t += Time.deltaTime;
-            float u = Mathf.Clamp01(t / Mathf.Max(0.0001f, duration));
+            float u = Mathf.Clamp01(t / duration);
             float shaped = doppelFadeCurve.Evaluate(u);
 
             SpinSelf(spinCharged);
@@ -450,7 +437,7 @@ public class A_OrbIntroSequence : MonoBehaviour
         while (t < duration)
         {
             t += Time.deltaTime;
-            float a = Smooth01(t / Mathf.Max(0.0001f, duration));
+            float a = Smooth01(t / duration);
 
             nebOrb.position = ClampMinY(Vector3.Lerp(startPos, targetPos, a));
 
@@ -575,7 +562,7 @@ public class A_OrbIntroSequence : MonoBehaviour
         while (t < duration)
         {
             t += Time.deltaTime;
-            float a = Smooth01(t / Mathf.Max(0.0001f, duration));
+            float a = Smooth01(t / duration);
             doppelgangerRoot.transform.position = ClampMinY(Vector3.Lerp(startPos, endPos, a));
             yield return null;
         }
@@ -661,10 +648,6 @@ public class A_OrbIntroSequence : MonoBehaviour
 
         Vector3 dir = (dist > 0.0001f) ? (delta / dist) : FlattenForward(playerHead.forward);
         dir.y = 0f;
-
-        if (Vector3.Dot(dir, FlattenForward(playerHead.forward)) < 0.0f)
-            dir = FlattenForward(playerHead.forward);
-
         if (dir.sqrMagnitude < 0.0001f) dir = Vector3.forward;
         dir.Normalize();
 
@@ -688,6 +671,7 @@ public class A_OrbIntroSequence : MonoBehaviour
 
     public void StartSequenceFromCurrentOrbPosition()
     {
-        
+        if (m_sequence != null) StopCoroutine(m_sequence);
+        m_sequence = StartCoroutine(Sequence());
     }
 }
