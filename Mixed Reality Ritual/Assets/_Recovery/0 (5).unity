@@ -832,6 +832,57 @@ Transform:
   - {fileID: 1097620046}
   m_Father: {fileID: 1125759391}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &66700504
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 66700506}
+  - component: {fileID: 66700505}
+  m_Layer: 0
+  m_Name: USD_Timeline_Controller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!320 &66700505
+PlayableDirector:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 66700504}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_PlayableAsset: {fileID: 11400000, guid: 7648f00d19856a644adebc723cd352a4, type: 2}
+  m_InitialState: 1
+  m_WrapMode: 2
+  m_DirectorUpdateMode: 1
+  m_InitialTime: 0
+  m_SceneBindings:
+  - key: {fileID: -400789854694700149, guid: 7648f00d19856a644adebc723cd352a4, type: 2}
+    value: {fileID: 905306425}
+  m_ExposedReferences:
+    m_References: []
+--- !u!4 &66700506
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 66700504}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.00095, y: 1.2287, z: 3.11407}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &68009898
 GameObject:
   m_ObjectHideFlags: 0
@@ -1631,12 +1682,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e45e872d43780ba4e9567c0f3937c629, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  fader: {fileID: 0}
+  doppelgangerMesh: {fileID: 0}
+  playerTravelDistance: 0
   nebOrb: {fileID: 2008179575}
   spinVisual: {fileID: 1294866649}
   playerHead: {fileID: 747421260}
   doppelgangerRoot: {fileID: 474063999}
   doppelgangerChest: {fileID: 1080788560}
-  minWorldY: 0
   doppelFadeDuration: 6
   doppelFadeCurve:
     serializedVersion: 2
@@ -1673,10 +1726,6 @@ MonoBehaviour:
   onAbsorbStart:
     m_PersistentCalls:
       m_Calls: []
-  startForward: 4
-  startHeight: 1.4
-  startRight: 0
-  snapOrbOnStart: 1
   hoverDuration: 15
   descendDuration: 10
   growAndSpinUpDuration: 30
@@ -38126,3 +38175,4 @@ SceneRoots:
   - {fileID: 2008179575}
   - {fileID: 376774895}
   - {fileID: 905306428}
+  - {fileID: 66700506}
