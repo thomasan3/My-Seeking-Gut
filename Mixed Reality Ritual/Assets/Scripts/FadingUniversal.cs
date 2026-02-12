@@ -5,18 +5,19 @@ using UnityEngine.Rendering.Universal;
 
 public class FadingUniversal : MonoBehaviour
 {
-     private static readonly int TransparencyProp = Shader.PropertyToID("_Transparency");
+    private static readonly int TransparencyProp = Shader.PropertyToID("_Transparency");
+    private static readonly int BaseColorProp = Shader.PropertyToID("_BaseColor");
 
-    public void StartFadeRenderer(GameObject targetObject, float duration, float targetTransparency, float startVal = -1)
+    public void StartFadeRenderer(GameObject targetObject, float duration, float targetTransparency, float startVal = -1,bool kill=false)
     {
         Renderer renderer = targetObject.GetComponent<Renderer>();
         if (renderer != null)
         {
-            StartCoroutine(FadeRoutineRenderer(renderer, duration, targetTransparency,startVal));
+            StartCoroutine(FadeRoutineRenderer(renderer, duration, targetTransparency,startVal,kill));
         }
     }
 
-    private IEnumerator FadeRoutineRenderer(Renderer renderer, float duration, float targetTransparency,float startVal = -1)
+    private IEnumerator FadeRoutineRenderer(Renderer renderer, float duration, float targetTransparency,float startVal = -1,bool kill = false)
     {
         
         MaterialPropertyBlock propBlock = new MaterialPropertyBlock();
@@ -24,6 +25,7 @@ public class FadingUniversal : MonoBehaviour
         renderer.GetPropertyBlock(propBlock);
 
         float startTransparency = startVal >= 0 ? startVal : propBlock.GetFloat("_Transparency");
+        //float startTransparency = startVal >= 0 ? startVal : propBlock.GetColor("_BaseColor").a;
         
         float elapsed = 0f;
 
@@ -34,14 +36,24 @@ public class FadingUniversal : MonoBehaviour
             
             float currentVal = Mathf.Lerp(startTransparency, targetTransparency, t);
             
+            renderer.GetPropertyBlock(propBlock);
+            //Color c = propBlock.GetColor("_BaseColor");
+            //c.a = currentVal;
             propBlock.SetFloat(TransparencyProp, currentVal);
+            //propBlock.SetColor(BaseColorProp,c);
             renderer.SetPropertyBlock(propBlock);
 
             yield return null;
         }
 
+        renderer.GetPropertyBlock(propBlock);
+        //Color co = propBlock.GetColor("_BaseColor");
+        //co.a = targetTransparency;
         propBlock.SetFloat(TransparencyProp, targetTransparency);
+        //propBlock.SetColor(BaseColorProp,co);
         renderer.SetPropertyBlock(propBlock);
+
+        if(kill){Destroy(renderer.gameObject);}
     }
 
     public void StartFadeLighting(GameObject targetObject, float duration, float targetBrightRatio,float startVal = -1)

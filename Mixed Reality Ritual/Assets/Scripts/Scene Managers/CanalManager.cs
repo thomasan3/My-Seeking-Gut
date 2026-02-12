@@ -13,8 +13,11 @@ public class CanalManager : MonoBehaviour
     public float shrinkSpeed = 0.5f;
 
 
-    public float speed;
+    private float speed=0f;
+    private float acceleration = 1.5f;
     [SerializeField] Transform canalParent;
+
+    [SerializeField] VRWhiteFadeSimple fadeToWhite;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -43,6 +46,7 @@ public class CanalManager : MonoBehaviour
         if (isMovingUp)
         {
             canalParent.Translate(Vector3.up * speed * Time.deltaTime);
+            speed+=acceleration*Time.deltaTime;
         }
     }
 
@@ -50,6 +54,7 @@ public class CanalManager : MonoBehaviour
     {
         if (state == "Fall")
         {
+            canalParent.gameObject.SetActive(true);
             isMovingUp = true;
             isShrinking = true;
             Debug.Log("Falling Canal event has begun");
@@ -57,13 +62,14 @@ public class CanalManager : MonoBehaviour
 
         if(state == "Whiteness")
         {
-            isMovingUp = false;
-            isShrinking = false;
+            fadeToWhite.FadeToWhite();
             Debug.Log("fade To White");
         }
 
         if(state == "End")
         {
+            isMovingUp = false;
+            isShrinking = false;
             Debug.Log("Fade to Passthrough");
         }
     }

@@ -25957,6 +25957,13 @@ static  Guid_t UnresolvedVirtualCall_1417 (RuntimeObject* __this, int32_t p1, co
 	method->invoker_method(il2cpp_codegen_get_method_pointer(method), method, __this, args, &il2cppRetVal);
 	return il2cppRetVal;
 }
+static  Guid_t UnresolvedStaticCall_1417 (int32_t p1, const RuntimeMethod* method)
+{
+	void* args[] = {&p1};
+	Guid_t il2cppRetVal;
+	method->invoker_method(il2cpp_codegen_get_direct_method_pointer(method), method, NULL, args, &il2cppRetVal);
+	return il2cppRetVal;
+}
 static  Guid_t UnresolvedVirtualCall_1418 (RuntimeObject* __this, RuntimeObject* p1, const RuntimeMethod* method)
 {
 	void* args[] = {p1};
@@ -61678,7 +61685,7 @@ const Il2CppMethodPointer g_UnresolvedStaticMethodPointers[4411] =
 	NULL,
 	NULL,
 	NULL,
-	NULL,
+	(const Il2CppMethodPointer)UnresolvedStaticCall_1417,
 	(const Il2CppMethodPointer)UnresolvedStaticCall_1418,
 	NULL,
 	(const Il2CppMethodPointer)UnresolvedStaticCall_1420,
