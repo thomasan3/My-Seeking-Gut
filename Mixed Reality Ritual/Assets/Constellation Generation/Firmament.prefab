@@ -59,23 +59,23 @@ MonoBehaviour:
   - {fileID: 7562447237217536673, guid: 5dcb1c6e624d4b14f85afad75ddb6d02, type: 3}
   - {fileID: 6105934261288074442, guid: 05eb90c5bdd55594fa238c640525fc70, type: 3}
   - {fileID: 4880924811599396768, guid: 0ee4acd6bc786af439e32d835ffcc1c8, type: 3}
-  base_dist: 2
+  base_dist: 3
   dist_growth_factor: 7
   dist_scatter: 0.2
   dist_scatter_growth_factor: 1.1
-  base_radius: 5
+  base_radius: 7
   radius_growth_factor: 12
   radius_scatter: 0.2
   radius_scatter_growth_factor: 1.1
-  base_period: 5
+  base_period: 15
   period_growth_factor: 5
-  period_scatter: 0.5
+  period_scatter: 0.4
   period_scatter_growth_factor: 1.1
   base_au: 1.5
   au_growth_factor: 13
   au_scatter: 0.4
   au_scatter_growth_factor: 1.2
-  base_size: 0.5
+  base_size: 1.5
   size_growth_factor: 15
   size_scatter: 0.3
   size_scatter_growth_factor: 1.5

@@ -13,7 +13,8 @@ public class CanalManager : MonoBehaviour
     public float shrinkSpeed = 0.5f;
 
 
-    public float speed;
+    private float speed=0f;
+    private float acceleration = 1.5f;
     [SerializeField] Transform canalParent;
 
     [SerializeField] VRWhiteFadeSimple fadeToWhite;
@@ -45,6 +46,7 @@ public class CanalManager : MonoBehaviour
         if (isMovingUp)
         {
             canalParent.Translate(Vector3.up * speed * Time.deltaTime);
+            speed+=acceleration*Time.deltaTime;
         }
     }
 
@@ -52,6 +54,7 @@ public class CanalManager : MonoBehaviour
     {
         if (state == "Fall")
         {
+            canalParent.gameObject.SetActive(true);
             isMovingUp = true;
             isShrinking = true;
             Debug.Log("Falling Canal event has begun");

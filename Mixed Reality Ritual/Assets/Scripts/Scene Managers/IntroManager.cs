@@ -8,7 +8,9 @@ public class IntroManager : MonoBehaviour
     [SerializeField] private GameObject floor;
     [SerializeField] private GameObject volume;
     [SerializeField] private FadingUniversal fader;
-    private float orb_fade_time = 3f;
+    [SerializeField] private GameObject dop;
+     [SerializeField] private GameObject dopMesh;
+    private float orb_fade_time = 5f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -30,15 +32,28 @@ public class IntroManager : MonoBehaviour
 
         if(state == "Orb")
         {
-            orb_parent.SetActive(true);
+            dop.SetActive(true);
+            //orb_parent.SetActive(true);
             floor.SetActive(true);
-            fader.StartFadeRenderer(orb,orb_fade_time,1,0);
+            //fader.StartFadeRenderer(orb,orb_fade_time,1,0);
             fader.StartFadeRenderer(floor,orb_fade_time,1,0);
+            fader.StartFadeRenderer(dopMesh,orb_fade_time,1,0);
         }
 
         if(state == "Constellation")
         {
-            fader.StartFadeRenderer(floor,3,0);
+            fader.StartFadeRenderer(floor,orb_fade_time,0,1,true);
+            fader.StartFadeVolume(volume,orb_fade_time,0,1);
+        }
+
+        if(state == "Dopple Fade")
+        {
+            fader.StartFadeRenderer(dopMesh,orb_fade_time,0,1);
+        }
+
+        if(state == "End")
+        {
+            fader.StartFadePassthrough(passthrough,seconds,1);
         }
     }
 }

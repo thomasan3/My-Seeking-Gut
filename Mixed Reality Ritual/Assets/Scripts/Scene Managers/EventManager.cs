@@ -30,7 +30,7 @@ public class EventManager : MonoBehaviour
         waitingTime = events[eventIndex].seconds;
     }
 
-    void NextEvent()
+    public void NextEvent()
     {
         eventIndex++;
         gameState = events[eventIndex].name;
