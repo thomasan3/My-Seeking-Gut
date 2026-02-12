@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class CanalController : MonoBehaviour
+public class CanalManager : MonoBehaviour
 {
     public GameObject tubePrefab;
     public Transform tubeEnd;
@@ -9,9 +9,21 @@ public class CanalController : MonoBehaviour
     public Transform tubeTrigger;
 
     public bool isShrinking = false;
+    public bool isMovingUp = false;
     public float shrinkSpeed = 0.5f;
 
-    private void Update()
+
+    public float speed;
+    [SerializeField] Transform canalParent;
+
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    void Start()
+    {
+        EventManager.GameStateChange += HandleStateChange;
+    }
+
+    // Update is called once per frame
+    void Update()
     {
         if (isShrinking && tubeParent != null)
         {
@@ -27,6 +39,32 @@ public class CanalController : MonoBehaviour
             scale.z = Mathf.Max(scale.z, minWidth);
 
             tubeParent.localScale = scale;
+        }
+        if (isMovingUp)
+        {
+            canalParent.Translate(Vector3.up * speed * Time.deltaTime);
+        }
+    }
+
+    void HandleStateChange(string state, float seconds)
+    {
+        if (state == "Fall")
+        {
+            isMovingUp = true;
+            isShrinking = true;
+            Debug.Log("Falling Canal event has begun");
+        }
+
+        if(state == "Whiteness")
+        {
+            isMovingUp = false;
+            isShrinking = false;
+            Debug.Log("fade To White");
+        }
+
+        if(state == "End")
+        {
+            Debug.Log("Fade to Passthrough");
         }
     }
 
@@ -56,14 +94,9 @@ public class CanalController : MonoBehaviour
         else
         {
             // Assign references so the trigger works
-            trigger.canalController = this;
+            trigger.canalManager = this;
         }
 
         Debug.Log("Spawned tube + moved trigger to new end");
-    }
-
-    public void Shrink()
-    {
-        isShrinking = true;
     }
 }

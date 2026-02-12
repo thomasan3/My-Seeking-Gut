@@ -2,13 +2,13 @@ using UnityEngine;
 
 public class End : MonoBehaviour
 {
-    public CanalController canalController;
+    public CanalManager canalManager;
 
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            canalController.SpawnExtraTube();
+            canalManager.SpawnExtraTube();
             Debug.Log("TubeEndTrigger: Player reached end early!");
         }
     }
