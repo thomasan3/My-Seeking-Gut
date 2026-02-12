@@ -16,6 +16,8 @@ public class CanalManager : MonoBehaviour
     public float speed;
     [SerializeField] Transform canalParent;
 
+    [SerializeField] VRWhiteFadeSimple fadeToWhite;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -57,13 +59,14 @@ public class CanalManager : MonoBehaviour
 
         if(state == "Whiteness")
         {
-            isMovingUp = false;
-            isShrinking = false;
+            fadeToWhite.FadeToWhite();
             Debug.Log("fade To White");
         }
 
         if(state == "End")
         {
+            isMovingUp = false;
+            isShrinking = false;
             Debug.Log("Fade to Passthrough");
         }
     }
