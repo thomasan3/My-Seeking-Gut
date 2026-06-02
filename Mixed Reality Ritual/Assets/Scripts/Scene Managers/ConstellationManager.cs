@@ -12,8 +12,11 @@ public class ConstellationManager : MonoBehaviour
     [SerializeField] private GameObject lights;
     [SerializeField] private GameObject ellipseMaker;
     [SerializeField] private FadingUniversal fu;
+    [SerializeField] private float planetFadeSeconds;
+    [SerializeField] private GameObject starbox;
+    [SerializeField] private GameObject ritObj;
 
-    private bool rising;
+    private bool rising = false;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -45,14 +48,30 @@ public class ConstellationManager : MonoBehaviour
             for (int i = 0; i < lights.transform.childCount;i++)
             {
                 GameObject ch = lights.transform.GetChild(i).gameObject;
-                fu.StartFadeLighting(ch,lightFadeSeconds,1,0);
+                fu.StartFadeLighting(ch,lightFadeSeconds,1f,0f);
             }
         }
+
+        if(state == "Stars")
+        {
+            
+            starbox.SetActive(true);
+            fu.StartFadeRenderer(starbox,30f,1);
+        }
+
+
         if(state=="Planet Movement")
         {
-            ellipseMaker.SetActive(true);
+            //ellipseMaker.SetActive(true);
         }
-        if(state=="Fall")
+
+        if(state == "Fan")
+        {
+            ritObj.SetActive(true);
+        }
+
+
+        if(state=="Stop Planet")
         {
             rising=true;
         }
@@ -68,7 +87,7 @@ public class ConstellationManager : MonoBehaviour
             if(rising){yield break;}
             ch.SetActive(true);
             ch.AddComponent<PlanetaryMover>();
-            fu.StartFadeRenderer(ch,5,1,0);//Mathf.Min(Random.Range(0.8f,1.5f),1f),0);
+            fu.StartFadeRenderer(ch,planetFadeSeconds,1,0);//Mathf.Min(Random.Range(0.8f,1.5f),1f),0);
             float t = 0f;
             while(t < planetWaitSeconds)
             {

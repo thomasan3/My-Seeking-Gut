@@ -29,12 +29,17 @@ public class FadingUniversal : MonoBehaviour
         
         float elapsed = 0f;
 
+        float ex = 1.3f;
+        ex = startTransparency < targetTransparency ? ex : 1f/ex;
+
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
+
+            float et = Mathf.Pow(t,1.3f);
             
-            float currentVal = Mathf.Lerp(startTransparency, targetTransparency, t);
+            float currentVal = Mathf.Lerp(startTransparency, targetTransparency, et);
             
             renderer.GetPropertyBlock(propBlock);
             //Color c = propBlock.GetColor("_BaseColor");
@@ -78,8 +83,10 @@ public class FadingUniversal : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
-            
-            float currentVal = Mathf.Lerp(startIntensity,targetIntensity, t);
+
+            float et = Mathf.SmoothStep(0f,1f,t);
+
+            float currentVal = Mathf.Lerp(startIntensity,targetIntensity, et);
             
             light.intensity = currentVal;
 

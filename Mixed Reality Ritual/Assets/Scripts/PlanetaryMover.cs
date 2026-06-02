@@ -2,13 +2,14 @@ using UnityEngine;
 
 public class PlanetaryMover : MonoBehaviour
 {
+    [SerializeField] private bool falls = true;
     private float acceleration = 1.5f;
     private float velocity = 0;
     private bool rising = false;
-    private bool rotating = false;
+    private bool rotating = true;
     private float max_y = 10000;
     private Quaternion rotationStep;
-    private float rotationSpeed = 2f;
+    private float rotationSpeed = 1.7f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -22,12 +23,6 @@ public class PlanetaryMover : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(rising)
-        {
-            if(transform.position.y > max_y){Destroy(gameObject);}
-            transform.position = transform.position + Vector3.up*velocity*Time.deltaTime;
-            velocity+=acceleration*Time.deltaTime;
-        }
         if(rotating)
         {
             transform.rotation *= Quaternion.Slerp(Quaternion.identity, rotationStep, Time.deltaTime);
@@ -39,10 +34,6 @@ public class PlanetaryMover : MonoBehaviour
         if (state=="Planet Movement")
         {
             rotating = true;
-        }
-        if (state=="Fall")
-        {
-            rising = true;
         }
     }
 }

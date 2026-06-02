@@ -96,6 +96,8 @@ namespace Meta.XR.Movement.Utils
             }
         }
 
+        [SerializeField] private AudioSource debugsfx;
+
         /// <summary>
         /// The target transform hierarchy to mirror from.
         /// </summary>
@@ -159,11 +161,21 @@ namespace Meta.XR.Movement.Utils
         private TransformAccessArray _bones;
         private TransformAccessArray _targetBones;
 
+        private bool _syncing = false;
+        private float _syncOffset = 1f;
+        private float _syncSpeed = 0.1f;
+        private float _syncTime = 11f;
+        private float _syncCounter = 0f;
+        private Vector3 startPos;
+        private Quaternion startRot;
+        private Vector3 startScl;
+
         /// <summary>
         /// Initializes the transform arrays for mirroring when the component starts.
         /// </summary>
         public void Start()
         {
+
             if (!Application.isPlaying)
             {
                 return;
@@ -188,6 +200,15 @@ namespace Meta.XR.Movement.Utils
             
             _delayPoses = new NativeArray<NativeTransform>(
                 _bonePairs.Length * (int)(_delaySeconds * _refreshRate), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        }
+
+        public void SyncUp()
+        {
+            _syncing = true;
+            startPos = transform.parent.position;
+            startRot = transform.parent.rotation;
+            startScl = transform.parent.localScale;
+            //debugsfx.Play();
         }
 
         /// <summary>
@@ -398,9 +419,25 @@ namespace Meta.XR.Movement.Utils
         private void UpdateJobs()
         {
             
-            int readhead = (_playhead + _bonePairs.Length) % _delayPoses.Length;
+            int readhead = (_playhead + (Mathf.RoundToInt(_syncOffset)*_bonePairs.Length) ) % _delayPoses.Length;
 
-             if (!_bufferFilled && readhead == 0)
+            if(readhead == _playhead)
+            {
+                _syncing = false;
+            }
+
+            if(_syncing)
+            {
+                _syncOffset += _syncSpeed;
+                _syncCounter += Time.deltaTime; 
+                float p = Mathf.Clamp01(_syncCounter / _syncTime);
+
+                transform.parent.position = Vector3.Lerp(startPos, _target.transform.position, p);
+                transform.parent.localScale = Vector3.Lerp(startScl, _target.transform.localScale, p);
+                transform.parent.rotation = Quaternion.Slerp(startRot, Quaternion.Euler(new Vector3(0f,0f,0f)), p);
+            }
+
+            if (!_bufferFilled && readhead == 0)
             {
                 _bufferFilled = true;
                 SetVisible(true);
@@ -429,7 +466,7 @@ namespace Meta.XR.Movement.Utils
             var getBonesJobHandle = getBonesJob.Schedule(_targetBones);
             copyBonesJob.Schedule(_bones, getBonesJobHandle).Complete();
 
-            _playhead = readhead;
+            _playhead = (_playhead + _bonePairs.Length) % _delayPoses.Length;
         }
 
 #if UNITY_EDITOR

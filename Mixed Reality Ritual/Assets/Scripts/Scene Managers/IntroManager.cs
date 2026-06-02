@@ -1,3 +1,4 @@
+using Meta.XR.Movement.Utils;
 using UnityEngine;
 
 public class IntroManager : MonoBehaviour
@@ -9,8 +10,13 @@ public class IntroManager : MonoBehaviour
     [SerializeField] private GameObject volume;
     [SerializeField] private FadingUniversal fader;
     [SerializeField] private GameObject dop;
-     [SerializeField] private GameObject dopMesh;
-    private float orb_fade_time = 5f;
+    [SerializeField] private GameObject dopMesh;
+    [SerializeField] private GameObject dopBones;
+
+    [SerializeField] private GameObject dop_light;
+    [SerializeField] private OVRScreenFade screenFade;
+    [SerializeField] private GameObject whiteFadeBall;
+    private float obj_fade_time = 7f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -35,21 +41,44 @@ public class IntroManager : MonoBehaviour
             dop.SetActive(true);
             //orb_parent.SetActive(true);
             floor.SetActive(true);
+            dop_light.SetActive(true);
             //fader.StartFadeRenderer(orb,orb_fade_time,1,0);
-            fader.StartFadeRenderer(floor,orb_fade_time,1,0);
-            fader.StartFadeRenderer(dopMesh,orb_fade_time,1,0);
+            fader.StartFadeRenderer(floor,obj_fade_time,1f,0f);
+            fader.StartFadeRenderer(dopMesh,obj_fade_time,1f,0f);
+            fader.StartFadeLighting(dop_light,obj_fade_time*.6f,1f,0f);
         }
 
         if(state == "Constellation")
         {
-            fader.StartFadeRenderer(floor,orb_fade_time,0,1,true);
-            fader.StartFadeVolume(volume,orb_fade_time,0,1);
+            fader.StartFadeRenderer(floor,5f,0f,1f,true);
+            fader.StartFadeVolume(volume,5f,0f,1f);
         }
+
+        
 
         if(state == "Dopple Fade")
         {
-            fader.StartFadeRenderer(dopMesh,orb_fade_time,0,1);
+            dopBones.GetComponent<MirrorDelayed>().SyncUp();
+            fader.StartFadeRenderer(dopMesh,obj_fade_time*2,0f,1f);
         }
+
+        if(state == "Whiteness")
+        {
+            whiteFadeBall.SetActive(true);
+            whiteFadeBall.GetComponent<VRWhiteFadeSimple>().StartFade(Color.white,3f);
+            //screenFade.fadeColor = Color.white;
+            //screenFade.FadeIn();
+        }
+
+        if(state == "Darkness End")
+        {
+            whiteFadeBall.SetActive(true);
+            whiteFadeBall.GetComponent<VRWhiteFadeSimple>().StartFade(Color.black,3f);
+            //screenFade.fadeColor = Color.black;
+            //screenFade.FadeIn();
+        }
+
+       
 
         if(state == "End")
         {

@@ -62,7 +62,7 @@ public class CanalManager : MonoBehaviour
 
         if(state == "Whiteness")
         {
-            fadeToWhite.FadeToWhite();
+            //fadeToWhite.FadeToWhite();
             Debug.Log("fade To White");
         }
 

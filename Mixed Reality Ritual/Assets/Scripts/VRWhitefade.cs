@@ -1,59 +1,38 @@
 using System.Collections;
+//using Meta.XR.ImmersiveDebugger.UserInterface.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class VRWhiteFadeSimple : MonoBehaviour
 {
-    public MeshRenderer fadeSphere;
-    public float fadeDuration = 1f;
-
-    private Material mat;
-    private float alpha = 0f;
+    [SerializeField] private Image fadeImage;
     private Coroutine fadeRoutine;
 
     void Start()
     {
-        mat = fadeSphere.material;
-        SetAlpha(0f); // start invisible
     }
 
-    public void FadeToWhite()
-    {
-        StartFade(1f);
-    }
-
-    public void FadeFromWhite()
-    {
-        StartFade(0f);
-    }
-
-    void StartFade(float target)
+    public void StartFade(Color c, float fadeDuration)
     {
         if (fadeRoutine != null)
             StopCoroutine(fadeRoutine);
 
-        fadeRoutine = StartCoroutine(FadeRoutine(target));
+        fadeRoutine = StartCoroutine(FadeRoutine(c,fadeDuration));
     }
 
-    IEnumerator FadeRoutine(float target)
+    IEnumerator FadeRoutine(Color c, float fadeDuration)
     {
-        float start = alpha;
+        Color startColor = fadeImage.color;
         float t = 0f;
 
         while (t < fadeDuration)
         {
             t += Time.deltaTime;
-            alpha = Mathf.Lerp(start, target, t / fadeDuration);
-            SetAlpha(alpha);
+            Color newColor = Color.Lerp(startColor, c, t / fadeDuration);
+            fadeImage.color = newColor;
             yield return null;
         }
-
-        SetAlpha(target);
+        fadeImage.color = c;
     }
 
-    void SetAlpha(float a)
-    {
-        Color c = mat.color;
-        c.a = a;
-        mat.color = c;
-    }
 }

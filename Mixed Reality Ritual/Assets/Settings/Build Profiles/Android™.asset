@@ -26,6 +26,10 @@ MonoBehaviour:
     m_path: Assets/Scenes/Constellation Testing.unity
   - m_enabled: 0
     m_path: Assets/Scenes/LorelaiCanal.unity
+  - m_enabled: 0
+    m_path: Assets/Scenes/Ari test.unity
+  - m_enabled: 0
+    m_path: Assets/Scenes/Ariana.unity
   m_ScriptingDefines: []
   m_PlayerSettingsYaml:
     m_Settings: []
@@ -53,7 +57,7 @@ MonoBehaviour:
         m_ExportAsGoogleAndroidProject: 0
         m_DebugSymbolLevel: 1
         m_DebugSymbolFormat: 5
-        m_CurrentDeploymentTargetId: __builtin__target_default
+        m_CurrentDeploymentTargetId: 2G97C5ZH6K06DR
         m_BuildType: 2
         m_LinkTimeOptimization: 0
         m_BuildAppBundle: 0

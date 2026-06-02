@@ -28,6 +28,22 @@
         "name": "Animation",
         "dependencies": [
           {
+            "name": "Animation",
+            "scenes": [
+              "Assets/Scenes/Doppleganger Delay.unity"
+            ],
+            "dependencyType": 0,
+            "icon": null
+          },
+          {
+            "name": "AnimationClip",
+            "scenes": [
+              "Assets/Scenes/Doppleganger Delay.unity"
+            ],
+            "dependencyType": 0,
+            "icon": null
+          },
+          {
             "name": "Animator",
             "scenes": [
               "Assets/Scenes/Doppleganger Delay.unity"
@@ -37,7 +53,9 @@
           },
           {
             "name": "AnimatorController",
-            "scenes": [],
+            "scenes": [
+              "Assets/Scenes/Doppleganger Delay.unity"
+            ],
             "dependencyType": 1,
             "icon": null
           },
@@ -53,6 +71,12 @@
               "Assets/Scenes/Doppleganger Delay.unity"
             ],
             "dependencyType": 0,
+            "icon": null
+          },
+          {
+            "name": "Motion",
+            "scenes": [],
+            "dependencyType": 1,
             "icon": null
           },
           {
@@ -87,7 +111,9 @@
           },
           {
             "name": "AudioClip",
-            "scenes": [],
+            "scenes": [
+              "Assets/Scenes/Doppleganger Delay.unity"
+            ],
             "dependencyType": 0,
             "icon": null
           },
@@ -107,13 +133,17 @@
           },
           {
             "name": "AudioResource",
-            "scenes": [],
-            "dependencyType": 1,
+            "scenes": [
+              "Assets/Scenes/Doppleganger Delay.unity"
+            ],
+            "dependencyType": 0,
             "icon": null
           },
           {
             "name": "AudioSource",
-            "scenes": [],
+            "scenes": [
+              "Assets/Scenes/Doppleganger Delay.unity"
+            ],
             "dependencyType": 0,
             "icon": null
           },
