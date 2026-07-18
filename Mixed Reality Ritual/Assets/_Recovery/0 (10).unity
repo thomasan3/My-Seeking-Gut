@@ -287,63 +287,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8320536501475192861, guid: 0e5c330c8ce917042b667b967e11994f, type: 3}
   m_PrefabInstance: {fileID: 1523699746}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &125134033
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 125134035}
-  - component: {fileID: 125134034}
-  m_Layer: 0
-  m_Name: PassthroughIntroController
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &125134034
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 125134033}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c71b7ff86fbfc1f4c90271cbf3a0bb07, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PassthroughIntroController
-  ovrManager: {fileID: 1402344223}
-  passthroughLayer: {fileID: 1644443947}
-  passthroughDuration: 5
-  fadeToBlackDuration: 1.5
-  blackHoldDuration: 0.5
-  fadeFromBlackDuration: 1.5
-  fadeRenderer: {fileID: 903042176}
-  fadeColorProperty: _BaseColor
-  virtualWorldRoot: {fileID: 2089933184}
-  orbLureController: {fileID: 257981725}
-  objectsHiddenDuringPassthrough: []
-  skipPassthroughWait: 0
-  allowLeftXToSkip: 1
---- !u!4 &125134035
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 125134033}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.42458, y: 0.14031, z: -0.24814}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &125321611 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 571059677494776877, guid: 8f60065df164ffa40b77cad3c7dc805e, type: 3}
@@ -907,7 +850,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 257981723}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 08764216f9b5047418e2026fc43a0e4f, type: 3}
   m_Name: 
@@ -10886,7 +10829,6 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 125134035}
   - {fileID: 705507995}
   - {fileID: 1808480940}
   - {fileID: 1644443949}

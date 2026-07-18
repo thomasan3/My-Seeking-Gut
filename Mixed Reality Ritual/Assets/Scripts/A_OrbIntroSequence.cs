@@ -3,8 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
+/// <summary>
+/// Controls the second half of the orb experience after OrbLureController has
+/// finished: growth, accelerated spin, doppelganger manifestation, orb shrink,
+/// chest absorption, disappearance, and optional doppelganger lowering.
+///
+/// IMPORTANT HIERARCHY EXPECTATION:
+/// Neb_orb_Pivot
+///   - Neb_orb_VisualPivot       (spins/scales; hide after absorption)
+///   - OrbSequenceController     (this component may live here)
+///   - Doppelganger              (must NOT be inside the spinning visual pivot)
+///
+/// Only Neb_orb_VisualPivot should be assigned to Turn Off On Absorb. Assigning
+/// the full pivot may also hide the doppelganger.
+/// </summary>
 public class A_OrbIntroSequence : MonoBehaviour
 {
+    // Scene object links. Keep the doppelganger outside the spinning visual hierarchy.
     [Header("References")]
     [Tooltip("Assign Neb_orb_Pivot.")]
     public Transform nebOrb;
@@ -28,6 +43,7 @@ public class A_OrbIntroSequence : MonoBehaviour
     [Tooltip("Lowest world-space Y allowed for the doppelganger root.")]
     public float minimumDoppelRootY = 0f;
 
+    // Radius-aware floor protection used during the growth phase.
     [Header("Orb Ground Hover")]
     [Tooltip("Keeps the bottom of the growing orb slightly above the ground.")]
     public bool keepOrbAboveGround = true;
@@ -86,6 +102,7 @@ public class A_OrbIntroSequence : MonoBehaviour
     [Tooltip("Places the orb at the standalone start position when Auto Start is enabled.")]
     public bool snapOrbOnStart = true;
 
+    // Growth moves the orb backward horizontally as its radius increases.
     [Header("Growth")]
     [Tooltip("Seconds required for the orb to accelerate and grow.")]
     public float growAndSpinUpDuration = 10f;
@@ -143,6 +160,7 @@ public class A_OrbIntroSequence : MonoBehaviour
     public AnimationCurve shrinkCurve =
         AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
+    // The small orb spins while moving into the chest and is hidden at arrival.
     [Header("Chest Absorption")]
     [Tooltip("Seconds required for the small orb to enter the doppelganger's chest.")]
     public float absorbDuration = 1.5f;
@@ -156,6 +174,7 @@ public class A_OrbIntroSequence : MonoBehaviour
     [Tooltip("Fallback height relative to the user's head.")]
     public float absorbHeight = -0.2f;
 
+    // Optional final vertical adjustment. This section does not rotate the model.
     [Header("Post-Absorb Doppel Lowering")]
     [Tooltip("Smoothly lowers or raises the doppelganger after the orb has disappeared into its chest.")]
     public bool lowerDoppelAfterAbsorb = true;
@@ -181,6 +200,10 @@ public class A_OrbIntroSequence : MonoBehaviour
     private static readonly int ColorId =
         Shader.PropertyToID("_Color");
 
+    /// <summary>
+    /// Finds the main camera when needed and creates a default two-beat pulse
+    /// curve if no heartbeat curve was supplied in the Inspector.
+    /// </summary>
     private void Awake()
     {
         if (playerHead == null && Camera.main != null)
@@ -199,6 +222,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Validates references, initializes the orb scale, hides the doppelganger,
+    /// and optionally starts this sequence without OrbLureController.
+    /// </summary>
     private void Start()
     {
         if (!ValidateReferences())
@@ -224,6 +251,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Public handoff used by OrbLureController. The orb grows from wherever
+    /// the lure left it instead of snapping to a new position.
+    /// </summary>
     public void BeginMainSequenceFromCurrentPosition()
     {
         if (!isActiveAndEnabled)
@@ -235,6 +266,9 @@ public class A_OrbIntroSequence : MonoBehaviour
         sequenceCoroutine = StartCoroutine(MainSequence());
     }
 
+    /// <summary>
+    /// Optional testing placement used only when Auto Start is enabled.
+    /// </summary>
     private void PlaceStandaloneStart()
     {
         nebOrb.position = ClampOrbCenterY(
@@ -245,6 +279,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         nebOrb.rotation = Quaternion.LookRotation(-forward, Vector3.up);
     }
 
+    /// <summary>
+    /// Master timeline for growth, manifestation, shrink, absorption, visual
+    /// disappearance, and optional post-absorb lowering.
+    /// </summary>
     private IEnumerator MainSequence()
     {
         Vector3 growthStartPosition = ClampOrbCenterY(nebOrb.position);
@@ -305,6 +343,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         sequenceCoroutine = null;
     }
 
+    /// <summary>
+    /// Enlarges the orb, ramps its spin, preserves a protected surface gap from
+    /// the participant, and prevents the orb from sinking through the floor.
+    /// </summary>
     private IEnumerator GrowAndSpinUpPhase(
         float duration,
         Vector3 startingPosition
@@ -440,6 +482,9 @@ public class A_OrbIntroSequence : MonoBehaviour
         nebOrb.position = ClampOrbCenterY(nebOrb.position);
     }
 
+    /// <summary>
+    /// Keeps the orb at charged size and speed for a fixed hold duration.
+    /// </summary>
     private IEnumerator HoldFullSize(float duration)
     {
         float elapsed = 0f;
@@ -452,6 +497,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Fades the doppelganger from transparent to opaque while keeping its chest
+    /// centered and its body facing the participant.
+    /// </summary>
     private IEnumerator FadeInDoppelganger(float duration)
     {
         float safeDuration = Mathf.Max(0.0001f, duration);
@@ -486,6 +535,10 @@ public class A_OrbIntroSequence : MonoBehaviour
             FaceDoppelTowardPlayer();
     }
 
+    /// <summary>
+    /// Rotates only around world Y so the model faces the participant without
+    /// tilting. Yaw Offset corrects the model's imported forward direction.
+    /// </summary>
     private void FaceDoppelTowardPlayer()
     {
         if (doppelgangerRoot == null || playerHead == null)
@@ -517,6 +570,10 @@ public class A_OrbIntroSequence : MonoBehaviour
             lookRotation * modelOffset;
     }
 
+    /// <summary>
+    /// Moves the charged orb to a point in front of the chest while shrinking
+    /// it. The orb continues spinning; the doppelganger remains still.
+    /// </summary>
     private IEnumerator ShrinkInFrontOfChest(
         float duration,
         Vector3 startPosition,
@@ -566,6 +623,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         spinVisual.localScale = Vector3.one * smallOrbScale;
     }
 
+    /// <summary>
+    /// Moves the small orb into the chest, keeps it spinning during entry, then
+    /// immediately hides the assigned orb visual at the destination.
+    /// </summary>
     private IEnumerator AbsorbIntoChest(
         float duration,
         Vector3 startPosition,
@@ -619,6 +680,10 @@ public class A_OrbIntroSequence : MonoBehaviour
             turnOffOnAbsorb.SetActive(false);
     }
 
+    /// <summary>
+    /// Calculates the point between the participant and the doppelganger chest
+    /// where the orb should finish shrinking.
+    /// </summary>
     private Vector3 GetShrinkTargetInFrontOfChest()
     {
         if (doppelgangerChest == null)
@@ -643,6 +708,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         return ClampOrbCenterY(target);
     }
 
+    /// <summary>
+    /// Selects the final absorption target: chest bone first, optional target
+    /// second, and a participant-relative fallback last.
+    /// </summary>
     private Vector3 GetChestAbsorbTarget()
     {
         if (doppelgangerChest != null)
@@ -660,6 +729,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// Creates runtime material instances and stores their original colors so
+    /// alpha can be animated without permanently editing project materials.
+    /// </summary>
     private void CacheDoppelMaterials()
     {
         doppelMaterials.Clear();
@@ -691,6 +764,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Positions, faces, and fully hides the doppelganger before activating it,
+    /// preventing a one-frame flash in the wrong place or orientation.
+    /// </summary>
     private void PrepareDoppelInvisibleNoFlash()
     {
         if (keepDoppelCenteredInOrb)
@@ -702,6 +779,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         SetDoppelAlpha(0f);
     }
 
+    /// <summary>
+    /// Moves the doppelganger root so the assigned chest bone aligns with the
+    /// orb center plus Doppel Local Offset.
+    /// </summary>
     private void CenterDoppelgangerInOrb()
     {
         if (doppelgangerRoot == null)
@@ -730,6 +811,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Writes the same fade alpha to every cached material while preserving each
+    /// material's original RGB color.
+    /// </summary>
     private void SetDoppelAlpha(float alpha)
     {
         float clampedAlpha =
@@ -814,6 +899,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         material.renderQueue = 3000;
     }
 
+    /// <summary>
+    /// After absorption, moves the doppelganger vertically so its chest reaches
+    /// the desired offset from the participant's head. Rotation is unchanged.
+    /// </summary>
     private IEnumerator LowerDoppelToUserHeight(float duration)
     {
         if (
@@ -877,6 +966,10 @@ public class A_OrbIntroSequence : MonoBehaviour
             targetPosition;
     }
 
+    /// <summary>
+    /// Rotates only the orb visual child, leaving the pivot and doppelganger
+    /// orientation untouched.
+    /// </summary>
     private void SpinOrb(float degreesPerSecond)
     {
         Vector3 axis =
@@ -891,6 +984,9 @@ public class A_OrbIntroSequence : MonoBehaviour
             );
     }
 
+    /// <summary>
+    /// Evaluates the looping heartbeat curve and returns its current pulse value.
+    /// </summary>
     private float GetHeartbeatPulse()
     {
         float phase =
@@ -902,6 +998,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         return heartbeatCurve.Evaluate(phase);
     }
 
+    /// <summary>
+    /// Builds a world-space point from participant-relative forward, height, and
+    /// right offsets. Used only for standalone/fallback positioning.
+    /// </summary>
     private Vector3 GetRelativePosition(
         float forwardMeters,
         float heightMeters,
@@ -923,6 +1023,9 @@ public class A_OrbIntroSequence : MonoBehaviour
                + right * rightMeters;
     }
 
+    /// <summary>
+    /// Prevents the orb pivot center from dropping below Minimum Orb Center Y.
+    /// </summary>
     private Vector3 ClampOrbCenterY(Vector3 position)
     {
         if (position.y < minimumOrbCenterY)
@@ -931,6 +1034,9 @@ public class A_OrbIntroSequence : MonoBehaviour
         return position;
     }
 
+    /// <summary>
+    /// Prevents the doppelganger root from dropping below its minimum world Y.
+    /// </summary>
     private Vector3 ClampDoppelRootY(Vector3 position)
     {
         if (position.y < minimumDoppelRootY)
@@ -939,6 +1045,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         return position;
     }
 
+    /// <summary>
+    /// Ensures that the orb pivot and participant head exist before any sequence
+    /// movement begins.
+    /// </summary>
     private bool ValidateReferences()
     {
         if (nebOrb == null)
@@ -962,6 +1072,10 @@ public class A_OrbIntroSequence : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Removes vertical tilt from a forward vector and returns a safe normalized
+    /// horizontal direction.
+    /// </summary>
     private static Vector3 FlattenForward(Vector3 forward)
     {
         forward.y = 0f;
@@ -972,6 +1086,9 @@ public class A_OrbIntroSequence : MonoBehaviour
         return forward.normalized;
     }
 
+    /// <summary>
+    /// Standard smoothstep easing used for organic movement and lowering.
+    /// </summary>
     private static float Smooth01(float value)
     {
         value = Mathf.Clamp01(value);
