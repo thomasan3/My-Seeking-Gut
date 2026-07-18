@@ -6,127 +6,180 @@ using UnityEngine.Events;
 public class A_OrbIntroSequence : MonoBehaviour
 {
     [Header("References")]
+    [Tooltip("Assign Neb_orb_Pivot.")]
     public Transform nebOrb;
+
+    [Tooltip("Assign Neb_orb_VisualPivot, or the visual object that should spin and scale.")]
     public Transform spinVisual;
+
+    [Tooltip("Assign CenterEyeAnchor.")]
     public Transform playerHead;
+
+    [Tooltip("Assign the root GameObject of the doppelganger.")]
     public GameObject doppelgangerRoot;
+
+    [Tooltip("Assign the doppelganger Chest, UpperChest, or Spine2 bone.")]
     public Transform doppelgangerChest;
 
-    [Header("World Ground Clamp")]
-    public float minWorldY = 0f;
+    [Header("World Height")]
+    [Tooltip("Lowest world-space Y allowed for the orb pivot. This does not increase with orb scale, so the orb will not fly upward while growing.")]
+    public float minimumOrbCenterY = 0.15f;
+
+    [Tooltip("Lowest world-space Y allowed for the doppelganger root.")]
+    public float minimumDoppelRootY = 0f;
+
+    [Header("Orb Ground Hover")]
+    [Tooltip("Keeps the bottom of the growing orb slightly above the ground.")]
+    public bool keepOrbAboveGround = true;
+
+    [Tooltip("Desired space between the bottom of the orb and the ground.")]
+    public float orbGroundClearance = 0.1f;
+
+    [Tooltip("Maximum amount the orb center may rise during growth to avoid a sudden flight upward.")]
+    public float maximumGroundLiftDuringGrowth = 0.75f;
 
     [Header("Doppelganger Fade")]
+    [Tooltip("Seconds required for the doppelganger to become fully visible.")]
     public float doppelFadeDuration = 6f;
-    public AnimationCurve doppelFadeCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    [Tooltip("Controls the fade speed across the full fade duration.")]
+    public AnimationCurve doppelFadeCurve =
+        AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    [Tooltip("Keeps the assigned chest bone centered inside the orb during the fade.")]
     public bool keepDoppelCenteredInOrb = true;
-    public Vector3 doppelLocalOffset = new Vector3(0, -0.3f, 0);
+
+    [Tooltip("Moves the doppelganger inside the orb without changing the orb position. Use a negative Y value to lower the doppelganger.")]
+    public Vector3 doppelLocalOffset = new Vector3(0f, -0.3f, 0f);
+
+    [Tooltip("Makes the doppelganger face the participant before and during the fade.")]
+    public bool facePlayerDuringFade = true;
+
+    [Tooltip("Corrects the model's built-in forward direction. Try 90, -90, 0, or 180.")]
+    public float doppelFacingYawOffset = 90f;
+
+    [Header("Full-Size Manifestation")]
+    [Tooltip("Optional pause at full size before the doppelganger begins fading in.")]
+    public float fullSizeHoldBeforeFade = 0f;
+
+    [Tooltip("Optional pause after the doppelganger is fully visible and before the orb starts shrinking.")]
+    public float fullSizeHoldAfterFade = 0.25f;
 
     [Header("Turn Off Object When Absorbed")]
+    [Tooltip("Assign Neb_orb_VisualPivot. Only this visual object is disabled after absorption; the doppelganger remains visible.")]
     public GameObject turnOffOnAbsorb;
 
     [Header("Events")]
     public UnityEvent onDoppelgangerFadeIn = new();
     public UnityEvent onAbsorbStart = new();
 
-    [Header("Start Placement")]
-    public float startForward = 4.0f;
+    [Header("Optional Standalone Start")]
+    [Tooltip("Used only when Auto Start is enabled.")]
+    public float startForward = 4f;
+
+    [Tooltip("Used only when Auto Start is enabled.")]
     public float startHeight = 2.2f;
-    public float startRight = 0.0f;
+
+    [Tooltip("Used only when Auto Start is enabled.")]
+    public float startRight = 0f;
+
+    [Tooltip("Places the orb at the standalone start position when Auto Start is enabled.")]
     public bool snapOrbOnStart = true;
 
-    [Header("Phase Durations")]
-    public float hoverDuration = 3.0f;
-    public float descendDuration = 6.0f;
-    public float growAndSpinUpDuration = 10.0f;
-    public float absorbDuration = 4.0f;
+    [Header("Growth")]
+    [Tooltip("Seconds required for the orb to accelerate and grow.")]
+    public float growAndSpinUpDuration = 10f;
 
-    [Header("Descend Target")]
-    public float descendForward = 3.5f;
-    public float descendHeight = 1.4f;
-    public float descendRight = 0.0f;
+    [Tooltip("Small vertical hovering motion while growing.")]
+    public float growHoverAmplitude = 0.03f;
 
-    [Header("Hover/Bob")]
-    public float hoverBobAmplitude = 0.12f;
-    public float hoverBobSpeed = 0.6f;
+    [Tooltip("Speed of the hovering motion while growing.")]
+    public float growHoverSpeed = 0.5f;
+
+    [Tooltip("Extra space added between the user and the nearest surface of the growing orb.")]
+    public float growExtraSurfaceGap = 0.6f;
+
+    [Tooltip("How smoothly the orb center moves backward while growing.")]
+    public float growBackAwaySmoothing = 5f;
 
     [Header("Heartbeat Pulse")]
     public float heartbeatStrength = 0.04f;
     public float heartbeatRate = 1.2f;
-    public AnimationCurve heartbeatCurve = null;
+    public AnimationCurve heartbeatCurve;
 
     [Header("Spin")]
-    public Vector3 spinAxisLocal = new Vector3(0, 1, 0);
+    public Vector3 spinAxisLocal = new Vector3(0f, 1f, 0f);
     public float spinIdle = 8f;
-    public float spinCharged = 300f;
-    public AnimationCurve spinRamp = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    public float spinCharged = 800f;
+    public AnimationCurve spinRamp =
+        AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("Scale")]
-    public float scaleStart = 1.0f;
-    public float scaleCharged = 8.0f;
-    public float scaleAbsorbEnd = 0.05f;
-    public AnimationCurve scaleRamp = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    public float scaleStart = 1f;
+    public float scaleCharged = 6f;
+    public AnimationCurve scaleRamp =
+        AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
-    [Header("Keep Player Outside Orb")]
+    [Header("Orb Size And User Spacing")]
+    [Tooltip("Approximate radius of the visible orb when scale equals 1.")]
     public float baseOrbRadiusMeters = 0.25f;
+
+    [Tooltip("Minimum protected space between the user and the nearest surface of the orb.")]
     public float cameraSafetyMarginMeters = 0.35f;
 
-    [Header("Absorb Target (fallback if no chest)")]
+    [Header("Shrink In Front Of Doppelganger")]
+    [Tooltip("Seconds required for the orb to shrink after the doppelganger is fully visible.")]
+    public float shrinkDuration = 5f;
+
+    [Tooltip("Orb scale reached before it enters the chest.")]
+    public float smallOrbScale = 0.12f;
+
+    [Tooltip("Distance in front of the chest where the orb finishes shrinking.")]
+    public float shrinkFrontOfChestMeters = 0.35f;
+
+    [Tooltip("Vertical offset for the small orb in front of the chest.")]
+    public float shrinkFrontOfChestHeight = 0f;
+
+    public AnimationCurve shrinkCurve =
+        AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    [Header("Chest Absorption")]
+    [Tooltip("Seconds required for the small orb to enter the doppelganger's chest.")]
+    public float absorbDuration = 1.5f;
+
+    [Tooltip("Optional fallback target when Doppelganger Chest is not assigned.")]
     public Transform absorbTarget;
+
+    [Tooltip("Fallback forward position relative to the user.")]
     public float absorbForward = 0.6f;
+
+    [Tooltip("Fallback height relative to the user's head.")]
     public float absorbHeight = -0.2f;
 
-    [Header("Follow Player")]
-    public bool followPlayer = false;
-    public float followLerp = 8f;
+    [Header("Post-Absorb Doppel Lowering")]
+    [Tooltip("Smoothly lowers or raises the doppelganger after the orb has disappeared into its chest.")]
+    public bool lowerDoppelAfterAbsorb = true;
 
-    [Header("Post-Absorb Doppel Alignment")]
-    public bool alignDoppelToUserAfterAbsorb = true;
+    [Tooltip("Desired doppelganger chest height relative to the participant's head.")]
     public float doppelChestYOffsetFromHead = -0.55f;
-    public float postAbsorbLowerDuration = 2.0f;
 
-    [Header("Final Facing")]
-    public bool facePlayerAfterAbsorb = true;
-    public float faceTurnSpeed = 8f;
-
-    [Header("Lure: Right -> Center")]
-    public bool enableRightToCenterLure = true;
-    public bool skipHoverAndDescendAfterLure = true;
-
-    public float lureStartRight = 1.4f;
-    public float lureStartForward = 2.8f;
-    public float lureHeightAboveHead = 1.2f;
-
-    public float lureMoveSeconds = 10.0f;
-    public float lureStartDistance = 2.2f;
-    public float lureForceStartAfterSeconds = 120f;
-
-    public float lureMinSpacing = 2.0f;
-    public float lureBackAwayStrength = 2.2f;
-    public float lureMaxBackAwaySpeed = 1.2f;
-
-    public float lureEndForward = 3.5f;
-    public float lureEndRight = 0.0f;
-    public float lureEndHeight = 1.4f;
-    public float lureExtraLowering = 0.3f;
-
-    [Header("Grow Spacing")]
-    public float growExtraSpacing = 0.6f;
+    [Tooltip("Seconds required for the post-absorb lowering movement.")]
+    public float postAbsorbLowerDuration = 2f;
 
     [Header("Debug")]
-    public bool autoStart = true;
+    [Tooltip("Leave disabled when OrbLureController starts this sequence.")]
+    public bool autoStart = false;
 
-    private Coroutine m_sequence;
+    private Coroutine sequenceCoroutine;
 
-    private readonly List<Material> m_doppelMats = new();
-    private readonly List<Color> m_doppelBaseColors = new();
+    private readonly List<Material> doppelMaterials = new();
+    private readonly List<Color> doppelBaseColors = new();
 
-    private static readonly int ID_BaseColor = Shader.PropertyToID("_BaseColor");
-    private static readonly int ID_Color = Shader.PropertyToID("_Color");
+    private static readonly int BaseColorId =
+        Shader.PropertyToID("_BaseColor");
 
-    private Vector3 m_lureStartWorld;
-    private Vector3 m_lureEndWorld;
-    private Vector3 m_lureForward;
-    private Vector3 m_lureRight;
+    private static readonly int ColorId =
+        Shader.PropertyToID("_Color");
 
     private void Awake()
     {
@@ -148,16 +201,8 @@ public class A_OrbIntroSequence : MonoBehaviour
 
     private void Start()
     {
-        if (nebOrb == null)
+        if (!ValidateReferences())
         {
-            Debug.LogError("[A_OrbIntroSequence] Assign nebOrb.");
-            enabled = false;
-            return;
-        }
-
-        if (playerHead == null)
-        {
-            Debug.LogError("[A_OrbIntroSequence] playerHead missing and Camera.main not found.");
             enabled = false;
             return;
         }
@@ -165,44 +210,52 @@ public class A_OrbIntroSequence : MonoBehaviour
         if (spinVisual == null)
             spinVisual = nebOrb;
 
-        if (snapOrbOnStart)
-            PlaceOrbStart();
-
         spinVisual.localScale = Vector3.one * scaleStart;
-        EnforceMinDistance(scaleStart, lureMinSpacing);
 
         if (doppelgangerRoot != null)
             doppelgangerRoot.SetActive(false);
 
         if (autoStart)
-            m_sequence = StartCoroutine(Sequence());
-    }
-
-    private void PlaceOrbStart()
-    {
-        nebOrb.position = ClampMinY(GetRelativePos(startForward, startHeight, startRight));
-        nebOrb.rotation = Quaternion.LookRotation(-FlattenForward(playerHead.forward), Vector3.up);
-    }
-
-    private IEnumerator Sequence()
-    {
-        if (enableRightToCenterLure)
-            yield return RightToCenterLurePhase();
-
-        Vector3 startAnchor = ClampMinY(nebOrb.position);
-        EnforceMinDistance(scaleStart, lureMinSpacing);
-
-        if (!enableRightToCenterLure || !skipHoverAndDescendAfterLure)
         {
-            yield return HoverPhase(hoverDuration, startAnchor);
+            if (snapOrbOnStart)
+                PlaceStandaloneStart();
 
-            Vector3 descendAnchor = ClampMinY(GetRelativePos(descendForward, descendHeight, descendRight));
-            yield return MovePhase(descendDuration, startAnchor, descendAnchor);
-
-            startAnchor = descendAnchor;
+            BeginMainSequenceFromCurrentPosition();
         }
+    }
 
-        yield return GrowAndSpinUpPhase(growAndSpinUpDuration, startAnchor);
+    public void BeginMainSequenceFromCurrentPosition()
+    {
+        if (!isActiveAndEnabled)
+            return;
+
+        if (sequenceCoroutine != null)
+            StopCoroutine(sequenceCoroutine);
+
+        sequenceCoroutine = StartCoroutine(MainSequence());
+    }
+
+    private void PlaceStandaloneStart()
+    {
+        nebOrb.position = ClampOrbCenterY(
+            GetRelativePosition(startForward, startHeight, startRight)
+        );
+
+        Vector3 forward = FlattenForward(playerHead.forward);
+        nebOrb.rotation = Quaternion.LookRotation(-forward, Vector3.up);
+    }
+
+    private IEnumerator MainSequence()
+    {
+        Vector3 growthStartPosition = ClampOrbCenterY(nebOrb.position);
+
+        yield return GrowAndSpinUpPhase(
+            growAndSpinUpDuration,
+            growthStartPosition
+        );
+
+        if (fullSizeHoldBeforeFade > 0f)
+            yield return HoldFullSize(fullSizeHoldBeforeFade);
 
         if (doppelgangerRoot != null)
         {
@@ -210,468 +263,718 @@ public class A_OrbIntroSequence : MonoBehaviour
             PrepareDoppelInvisibleNoFlash();
 
             doppelgangerRoot.SetActive(true);
+
+            if (keepDoppelCenteredInOrb)
+                CenterDoppelgangerInOrb();
+
+            if (facePlayerDuringFade)
+                FaceDoppelTowardPlayer();
+
             onDoppelgangerFadeIn?.Invoke();
 
-            yield return RevealDoppelWhileOrbLives(doppelFadeDuration);
+            yield return FadeInDoppelganger(doppelFadeDuration);
         }
+
+        if (fullSizeHoldAfterFade > 0f)
+            yield return HoldFullSize(fullSizeHoldAfterFade);
 
         onAbsorbStart?.Invoke();
 
-        Vector3 absorbPos =
-            (doppelgangerChest != null) ? doppelgangerChest.position :
-            (absorbTarget != null) ? absorbTarget.position :
-            GetRelativePos(absorbForward, absorbHeight, 0);
+        Vector3 shrinkTarget = GetShrinkTargetInFrontOfChest();
 
-        absorbPos = ClampMinY(absorbPos);
+        yield return ShrinkInFrontOfChest(
+            shrinkDuration,
+            nebOrb.position,
+            shrinkTarget
+        );
 
-        yield return AbsorbPhase(absorbDuration, nebOrb.position, absorbPos);
+        Vector3 chestTarget = GetChestAbsorbTarget();
 
-        if (turnOffOnAbsorb != null)
-            turnOffOnAbsorb.SetActive(false);
+        yield return AbsorbIntoChest(
+            absorbDuration,
+            nebOrb.position,
+            chestTarget
+        );
 
-        if (alignDoppelToUserAfterAbsorb)
-            yield return AlignDoppelToUserY_Smooth(postAbsorbLowerDuration);
+        // The orb visual is already hidden at the exact end of AbsorbIntoChest().
+        // Lower the doppelganger only after the orb has completely disappeared.
+        // Its facing direction is not changed here.
+        if (lowerDoppelAfterAbsorb)
+            yield return LowerDoppelToUserHeight(postAbsorbLowerDuration);
 
-        if (facePlayerAfterAbsorb)
-            yield return FaceDoppelToPlayer_Speed(faceTurnSpeed);
-
-        nebOrb.gameObject.SetActive(false);
+        sequenceCoroutine = null;
     }
 
-    private IEnumerator RightToCenterLurePhase()
+    private IEnumerator GrowAndSpinUpPhase(
+        float duration,
+        Vector3 startingPosition
+    )
     {
-        m_lureForward = FlattenForward(playerHead.forward);
-        m_lureRight = Vector3.Cross(Vector3.up, m_lureForward).normalized;
+        float safeDuration = Mathf.Max(0.0001f, duration);
+        float elapsed = 0f;
 
-        Vector3 headAtStart = playerHead.position;
+        Vector3 growthDirection = Vector3.ProjectOnPlane(
+            startingPosition - playerHead.position,
+            Vector3.up
+        );
 
-        m_lureStartWorld = headAtStart
-                           + m_lureRight * lureStartRight
-                           + m_lureForward * lureStartForward
-                           + Vector3.up * lureHeightAboveHead;
+        if (growthDirection.sqrMagnitude < 0.0001f)
+            growthDirection = FlattenForward(playerHead.forward);
 
-        m_lureEndWorld = headAtStart
-                         + m_lureForward * lureEndForward
-                         + m_lureRight * lureEndRight
-                         + Vector3.up * lureEndHeight;
+        growthDirection.Normalize();
 
-        m_lureStartWorld = ClampMinY(m_lureStartWorld);
-        m_lureEndWorld = ClampMinY(m_lureEndWorld);
+        float startingHorizontalDistance = Vector3.Distance(
+            Vector3.ProjectOnPlane(startingPosition, Vector3.up),
+            Vector3.ProjectOnPlane(playerHead.position, Vector3.up)
+        );
 
-        nebOrb.position = m_lureStartWorld;
+        float startingRadius = Mathf.Max(
+            0.001f,
+            baseOrbRadiusMeters * scaleStart
+        );
 
-        float t = 0f;
-        float after = 0f;
+        float savedSurfaceGap = Mathf.Max(
+            cameraSafetyMarginMeters,
+            startingHorizontalDistance - startingRadius
+        ) + growExtraSurfaceGap;
 
-        while (true)
+        // Keep the same vertical center throughout growth.
+        // This prevents the radius from pushing the orb upward as it grows.
+        float fixedCenterY = Mathf.Max(
+            minimumOrbCenterY,
+            startingPosition.y
+        );
+
+        while (elapsed < safeDuration)
         {
-            SpinSelf(spinIdle);
+            elapsed += Time.deltaTime;
 
-            float u = Mathf.Clamp01(t / Mathf.Max(0.0001f, lureMoveSeconds));
-            float s = Smooth01(u);
+            float normalizedTime =
+                Mathf.Clamp01(elapsed / safeDuration);
 
-            Vector3 end = m_lureEndWorld + Vector3.down * (lureExtraLowering * s);
-            Vector3 desired = Vector3.Lerp(m_lureStartWorld, end, s);
+            float scaleProgress =
+                scaleRamp.Evaluate(normalizedTime);
 
-            float bob = Mathf.Sin(Time.time * hoverBobSpeed) * (hoverBobAmplitude * 0.25f);
-            desired += Vector3.up * bob;
+            float baseScale =
+                Mathf.Lerp(scaleStart, scaleCharged, scaleProgress);
 
-            nebOrb.position = ClampMinY(Vector3.Lerp(nebOrb.position, desired, Time.deltaTime * 4f));
+            float pulse =
+                1f + GetHeartbeatPulse() * heartbeatStrength;
 
-            EnforceMinDistance(scaleStart, lureMinSpacing);
-
-            nebOrb.rotation = Quaternion.LookRotation(-m_lureForward, Vector3.up);
-
-            float dist = Vector3.Distance(playerHead.position, nebOrb.position);
-            if (u >= 1f)
-            {
-                after += Time.deltaTime;
-                bool closeEnough = dist <= lureStartDistance;
-                bool forced = after >= lureForceStartAfterSeconds;
-                if (closeEnough || forced)
-                    yield break;
-            }
-            else
-            {
-                t += Time.deltaTime;
-            }
-
-            yield return null;
-        }
-    }
-
-    private IEnumerator HoverPhase(float duration, Vector3 anchor)
-    {
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-
-            if (followPlayer)
-                anchor = Vector3.Lerp(anchor, GetRelativePos(startForward, startHeight, startRight), Time.deltaTime * followLerp);
-
-            float bob = Mathf.Sin(Time.time * hoverBobSpeed) * hoverBobAmplitude;
-            nebOrb.position = ClampMinY(anchor + Vector3.up * bob);
-
-            float pulse = 1f + GetHeartbeatPulse() * heartbeatStrength;
-            float visualScale = scaleStart * pulse;
-
-            spinVisual.localScale = Vector3.one * visualScale;
-            EnforceMinDistance(visualScale, lureMinSpacing);
-
-            SpinSelf(spinIdle);
-
-            if (keepDoppelCenteredInOrb)
-                MoveDoppelToOrbCenter();
-
-            yield return null;
-        }
-
-        nebOrb.position = ClampMinY(anchor);
-        spinVisual.localScale = Vector3.one * scaleStart;
-        EnforceMinDistance(scaleStart, lureMinSpacing);
-    }
-
-    private IEnumerator MovePhase(float duration, Vector3 fromAnchor, Vector3 toAnchor)
-    {
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            float a = Smooth01(t / duration);
-
-            if (followPlayer)
-                toAnchor = GetRelativePos(descendForward, descendHeight, descendRight);
-
-            Vector3 basePos = Vector3.Lerp(fromAnchor, toAnchor, a);
-            float bob = Mathf.Sin(Time.time * hoverBobSpeed) * (hoverBobAmplitude * 0.35f);
-
-            nebOrb.position = ClampMinY(basePos + Vector3.up * bob);
-
-            float pulse = 1f + GetHeartbeatPulse() * heartbeatStrength;
-            float visualScale = scaleStart * pulse;
-
-            spinVisual.localScale = Vector3.one * visualScale;
-            EnforceMinDistance(visualScale, lureMinSpacing);
-
-            SpinSelf(spinIdle);
-
-            if (keepDoppelCenteredInOrb)
-                MoveDoppelToOrbCenter();
-
-            yield return null;
-        }
-
-        nebOrb.position = ClampMinY(toAnchor);
-        spinVisual.localScale = Vector3.one * scaleStart;
-        EnforceMinDistance(scaleStart, lureMinSpacing);
-    }
-
-    private IEnumerator GrowAndSpinUpPhase(float duration, Vector3 anchor)
-    {
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            float u = Mathf.Clamp01(t / duration);
-
-            float bob = Mathf.Sin(Time.time * (hoverBobSpeed * 0.8f)) * (hoverBobAmplitude * 0.25f);
-            nebOrb.position = ClampMinY(anchor + Vector3.up * bob);
-
-            float sRamp = scaleRamp.Evaluate(u);
-            float baseScale = Mathf.Lerp(scaleStart, scaleCharged, sRamp);
-
-            float pulse = 1f + GetHeartbeatPulse() * heartbeatStrength;
             float visualScale = baseScale * pulse;
-
             spinVisual.localScale = Vector3.one * visualScale;
 
-            float growMin = Mathf.Max(lureMinSpacing, (baseOrbRadiusMeters * visualScale + cameraSafetyMarginMeters) + growExtraSpacing);
-            EnforceMinDistance(visualScale, growMin);
+            float currentRadius = Mathf.Max(
+                0.001f,
+                baseOrbRadiusMeters * visualScale
+            );
 
-            float r = spinRamp.Evaluate(u);
-            float spin = Mathf.Lerp(spinIdle, spinCharged, r);
-            SpinSelf(spin);
+            float requiredCenterDistance =
+                savedSurfaceGap + currentRadius;
 
-            if (keepDoppelCenteredInOrb)
-                MoveDoppelToOrbCenter();
+            Vector3 desiredPosition =
+                playerHead.position
+                + growthDirection * requiredCenterDistance;
+
+            float hover =
+                Mathf.Sin(Time.time * growHoverSpeed)
+                * growHoverAmplitude;
+
+            float desiredCenterY = fixedCenterY + hover;
+
+            if (keepOrbAboveGround)
+            {
+                float groundSafeCenterY =
+                    minimumOrbCenterY
+                    + currentRadius
+                    + orbGroundClearance;
+
+                float maximumAllowedCenterY =
+                    fixedCenterY
+                    + Mathf.Max(0f, maximumGroundLiftDuringGrowth);
+
+                groundSafeCenterY =
+                    Mathf.Min(
+                        groundSafeCenterY,
+                        maximumAllowedCenterY
+                    );
+
+                desiredCenterY =
+                    Mathf.Max(
+                        desiredCenterY,
+                        groundSafeCenterY
+                    );
+            }
+
+            desiredPosition.y = desiredCenterY;
+            desiredPosition = ClampOrbCenterY(desiredPosition);
+
+            float smoothing =
+                1f - Mathf.Exp(
+                    -Mathf.Max(0.01f, growBackAwaySmoothing)
+                    * Time.deltaTime
+                );
+
+            nebOrb.position = Vector3.Lerp(
+                nebOrb.position,
+                desiredPosition,
+                smoothing
+            );
+
+            float spinProgress =
+                spinRamp.Evaluate(normalizedTime);
+
+            float spinSpeed =
+                Mathf.Lerp(
+                    spinIdle,
+                    spinCharged,
+                    spinProgress
+                );
+
+            SpinOrb(spinSpeed);
 
             yield return null;
         }
 
-        nebOrb.position = ClampMinY(anchor);
         spinVisual.localScale = Vector3.one * scaleCharged;
-
-        float finalMin = Mathf.Max(lureMinSpacing, (baseOrbRadiusMeters * scaleCharged + cameraSafetyMarginMeters) + growExtraSpacing);
-        EnforceMinDistance(scaleCharged, finalMin);
+        nebOrb.position = ClampOrbCenterY(nebOrb.position);
     }
 
-    private IEnumerator RevealDoppelWhileOrbLives(float duration)
+    private IEnumerator HoldFullSize(float duration)
     {
-        float t = 0f;
-        while (t < duration)
+        float elapsed = 0f;
+
+        while (elapsed < duration)
         {
-            t += Time.deltaTime;
-            float u = Mathf.Clamp01(t / duration);
-            float shaped = doppelFadeCurve.Evaluate(u);
+            elapsed += Time.deltaTime;
+            SpinOrb(spinCharged);
+            yield return null;
+        }
+    }
 
-            SpinSelf(spinCharged);
+    private IEnumerator FadeInDoppelganger(float duration)
+    {
+        float safeDuration = Mathf.Max(0.0001f, duration);
+        float elapsed = 0f;
 
-            float currentScale = spinVisual.localScale.x;
-            EnforceMinDistance(currentScale, Mathf.Max(lureMinSpacing, baseOrbRadiusMeters * currentScale + cameraSafetyMarginMeters));
+        while (elapsed < safeDuration)
+        {
+            elapsed += Time.deltaTime;
+
+            float normalizedTime =
+                Mathf.Clamp01(elapsed / safeDuration);
+
+            float alpha =
+                doppelFadeCurve.Evaluate(normalizedTime);
+
+            SpinOrb(spinCharged);
 
             if (keepDoppelCenteredInOrb)
-                MoveDoppelToOrbCenter();
+                CenterDoppelgangerInOrb();
 
-            SetDoppelAlpha(shaped);
+            if (facePlayerDuringFade)
+                FaceDoppelTowardPlayer();
+
+            SetDoppelAlpha(alpha);
 
             yield return null;
         }
 
         SetDoppelAlpha(1f);
+
+        if (facePlayerDuringFade)
+            FaceDoppelTowardPlayer();
     }
 
-    private IEnumerator AbsorbPhase(float duration, Vector3 startPos, Vector3 targetPos)
+    private void FaceDoppelTowardPlayer()
     {
-        float t = 0f;
-        while (t < duration)
+        if (doppelgangerRoot == null || playerHead == null)
+            return;
+
+        Vector3 towardPlayer =
+            playerHead.position
+            - doppelgangerRoot.transform.position;
+
+        towardPlayer.y = 0f;
+
+        if (towardPlayer.sqrMagnitude < 0.0001f)
+            return;
+
+        Quaternion lookRotation =
+            Quaternion.LookRotation(
+                towardPlayer.normalized,
+                Vector3.up
+            );
+
+        Quaternion modelOffset =
+            Quaternion.Euler(
+                0f,
+                doppelFacingYawOffset,
+                0f
+            );
+
+        doppelgangerRoot.transform.rotation =
+            lookRotation * modelOffset;
+    }
+
+    private IEnumerator ShrinkInFrontOfChest(
+        float duration,
+        Vector3 startPosition,
+        Vector3 targetPosition
+    )
+    {
+        float safeDuration = Mathf.Max(0.0001f, duration);
+        float elapsed = 0f;
+
+        while (elapsed < safeDuration)
         {
-            t += Time.deltaTime;
-            float a = Smooth01(t / duration);
+            elapsed += Time.deltaTime;
 
-            nebOrb.position = ClampMinY(Vector3.Lerp(startPos, targetPos, a));
+            float normalizedTime =
+                Mathf.Clamp01(elapsed / safeDuration);
 
-            SpinSelf(spinCharged);
+            float progress =
+                shrinkCurve.Evaluate(normalizedTime);
 
-            float visualScale = Mathf.Lerp(scaleCharged, scaleAbsorbEnd, a);
-            spinVisual.localScale = Vector3.one * visualScale;
+            float visualScale =
+                Mathf.Lerp(
+                    scaleCharged,
+                    smallOrbScale,
+                    progress
+                );
 
-            EnforceMinDistance(visualScale, Mathf.Max(lureMinSpacing, baseOrbRadiusMeters * visualScale + cameraSafetyMarginMeters));
+            Vector3 desiredPosition =
+                Vector3.Lerp(
+                    startPosition,
+                    targetPosition,
+                    progress
+                );
 
-            if (keepDoppelCenteredInOrb)
-                MoveDoppelToOrbCenter();
+            nebOrb.position =
+                ClampOrbCenterY(desiredPosition);
+
+            spinVisual.localScale =
+                Vector3.one * visualScale;
+
+            SpinOrb(spinCharged);
+
+            // The doppelganger does not spin, lower, or rotate during shrink.
+            yield return null;
+        }
+
+        nebOrb.position = ClampOrbCenterY(targetPosition);
+        spinVisual.localScale = Vector3.one * smallOrbScale;
+    }
+
+    private IEnumerator AbsorbIntoChest(
+        float duration,
+        Vector3 startPosition,
+        Vector3 chestPosition
+    )
+    {
+        float safeDuration = Mathf.Max(0.0001f, duration);
+        float elapsed = 0f;
+
+        while (elapsed < safeDuration)
+        {
+            elapsed += Time.deltaTime;
+
+            float normalizedTime =
+                Mathf.Clamp01(elapsed / safeDuration);
+
+            float progress =
+                Smooth01(normalizedTime);
+
+            Vector3 desiredPosition =
+                Vector3.Lerp(
+                    startPosition,
+                    chestPosition,
+                    progress
+                );
+
+            nebOrb.position =
+                ClampOrbCenterY(desiredPosition);
+
+            float visualScale =
+                Mathf.Lerp(
+                    smallOrbScale,
+                    0.01f,
+                    progress
+                );
+
+            spinVisual.localScale =
+                Vector3.one * visualScale;
+
+            SpinOrb(spinCharged);
 
             yield return null;
         }
 
-        nebOrb.position = ClampMinY(targetPos);
-        spinVisual.localScale = Vector3.one * scaleAbsorbEnd;
-        EnforceMinDistance(scaleAbsorbEnd, Mathf.Max(lureMinSpacing, baseOrbRadiusMeters * scaleAbsorbEnd + cameraSafetyMarginMeters));
+        nebOrb.position = ClampOrbCenterY(chestPosition);
+        spinVisual.localScale = Vector3.one * 0.01f;
+
+        // The orb keeps spinning for the entire chest-entry motion,
+        // then disappears immediately when it reaches the chest.
+        if (turnOffOnAbsorb != null)
+            turnOffOnAbsorb.SetActive(false);
+    }
+
+    private Vector3 GetShrinkTargetInFrontOfChest()
+    {
+        if (doppelgangerChest == null)
+            return GetChestAbsorbTarget();
+
+        Vector3 towardPlayer =
+            playerHead.position
+            - doppelgangerChest.position;
+
+        towardPlayer.y = 0f;
+
+        if (towardPlayer.sqrMagnitude < 0.0001f)
+            towardPlayer = -FlattenForward(playerHead.forward);
+
+        towardPlayer.Normalize();
+
+        Vector3 target =
+            doppelgangerChest.position
+            + towardPlayer * shrinkFrontOfChestMeters
+            + Vector3.up * shrinkFrontOfChestHeight;
+
+        return ClampOrbCenterY(target);
+    }
+
+    private Vector3 GetChestAbsorbTarget()
+    {
+        if (doppelgangerChest != null)
+            return ClampOrbCenterY(doppelgangerChest.position);
+
+        if (absorbTarget != null)
+            return ClampOrbCenterY(absorbTarget.position);
+
+        return ClampOrbCenterY(
+            GetRelativePosition(
+                absorbForward,
+                absorbHeight,
+                0f
+            )
+        );
     }
 
     private void CacheDoppelMaterials()
     {
-        m_doppelMats.Clear();
-        m_doppelBaseColors.Clear();
+        doppelMaterials.Clear();
+        doppelBaseColors.Clear();
 
-        if (doppelgangerRoot == null) return;
+        if (doppelgangerRoot == null)
+            return;
 
-        var renderers = doppelgangerRoot.GetComponentsInChildren<Renderer>(true);
-        foreach (var r in renderers)
+        Renderer[] renderers =
+            doppelgangerRoot.GetComponentsInChildren<Renderer>(true);
+
+        foreach (Renderer rendererComponent in renderers)
         {
-            var mats = r.materials;
-            foreach (var m in mats)
+            Material[] materials =
+                rendererComponent.materials;
+
+            foreach (Material material in materials)
             {
-                if (m == null) continue;
-                m_doppelMats.Add(m);
-                m_doppelBaseColors.Add(ReadColor(m));
-                ForceMaterialTransparentIfPossible(m);
+                if (material == null)
+                    continue;
+
+                doppelMaterials.Add(material);
+                doppelBaseColors.Add(
+                    ReadMaterialColor(material)
+                );
+
+                ConfigureMaterialForTransparency(material);
             }
         }
     }
 
     private void PrepareDoppelInvisibleNoFlash()
     {
-        SetDoppelAlpha(0f);
         if (keepDoppelCenteredInOrb)
-            MoveDoppelToOrbCenter();
+            CenterDoppelgangerInOrb();
+
+        if (facePlayerDuringFade)
+            FaceDoppelTowardPlayer();
+
+        SetDoppelAlpha(0f);
     }
 
-    private void SetDoppelAlpha(float a)
+    private void CenterDoppelgangerInOrb()
     {
-        for (int i = 0; i < m_doppelMats.Count; i++)
-        {
-            var m = m_doppelMats[i];
-            var baseC = m_doppelBaseColors[i];
-            WriteColor(m, new Color(baseC.r, baseC.g, baseC.b, a));
-        }
-    }
+        if (doppelgangerRoot == null)
+            return;
 
-    private static Color ReadColor(Material m)
-    {
-        if (m.HasProperty(ID_BaseColor)) return m.GetColor(ID_BaseColor);
-        if (m.HasProperty(ID_Color)) return m.GetColor(ID_Color);
-        return Color.white;
-    }
-
-    private static void WriteColor(Material m, Color c)
-    {
-        if (m.HasProperty(ID_BaseColor)) m.SetColor(ID_BaseColor, c);
-        else if (m.HasProperty(ID_Color)) m.SetColor(ID_Color, c);
-    }
-
-    private static void ForceMaterialTransparentIfPossible(Material m)
-    {
-        if (m.HasProperty("_Surface")) m.SetFloat("_Surface", 1f);
-        if (m.HasProperty("_ZWrite")) m.SetFloat("_ZWrite", 0f);
-        if (m.HasProperty("_AlphaClip")) m.SetFloat("_AlphaClip", 0f);
-
-        if (m.HasProperty("_SrcBlend")) m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        if (m.HasProperty("_DstBlend")) m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        if (m.HasProperty("_DstBlendAlpha")) m.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        if (m.HasProperty("_SrcBlendAlpha")) m.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
-
-        m.renderQueue = 3000;
-    }
-
-    private void MoveDoppelToOrbCenter()
-    {
-        if (doppelgangerRoot == null) return;
-
-        Vector3 orbCenter = nebOrb.position + nebOrb.TransformVector(doppelLocalOffset);
-        orbCenter = ClampMinY(orbCenter);
+        Vector3 orbCenter =
+            nebOrb.position
+            + nebOrb.TransformVector(doppelLocalOffset);
 
         if (doppelgangerChest != null)
         {
-            Vector3 delta = orbCenter - doppelgangerChest.position;
-            doppelgangerRoot.transform.position = ClampMinY(doppelgangerRoot.transform.position + delta);
+            Vector3 movement =
+                orbCenter - doppelgangerChest.position;
+
+            Vector3 newRootPosition =
+                doppelgangerRoot.transform.position
+                + movement;
+
+            doppelgangerRoot.transform.position =
+                ClampDoppelRootY(newRootPosition);
         }
         else
         {
-            doppelgangerRoot.transform.position = orbCenter;
+            doppelgangerRoot.transform.position =
+                ClampDoppelRootY(orbCenter);
         }
     }
 
-    private IEnumerator AlignDoppelToUserY_Smooth(float duration)
+    private void SetDoppelAlpha(float alpha)
     {
-        if (doppelgangerRoot == null || playerHead == null || doppelgangerChest == null) yield break;
+        float clampedAlpha =
+            Mathf.Clamp01(alpha);
 
-        float desiredChestY = Mathf.Max(minWorldY, playerHead.position.y + doppelChestYOffsetFromHead);
-        float deltaY = desiredChestY - doppelgangerChest.position.y;
-
-        Vector3 startPos = doppelgangerRoot.transform.position;
-        Vector3 endPos = ClampMinY(startPos + new Vector3(0, deltaY, 0));
-
-        if (duration <= 0f)
+        for (int i = 0; i < doppelMaterials.Count; i++)
         {
-            doppelgangerRoot.transform.position = endPos;
+            Material material =
+                doppelMaterials[i];
+
+            Color baseColor =
+                doppelBaseColors[i];
+
+            Color fadedColor =
+                new Color(
+                    baseColor.r,
+                    baseColor.g,
+                    baseColor.b,
+                    clampedAlpha
+                );
+
+            WriteMaterialColor(
+                material,
+                fadedColor
+            );
+        }
+    }
+
+    private static Color ReadMaterialColor(
+        Material material
+    )
+    {
+        if (material.HasProperty(BaseColorId))
+            return material.GetColor(BaseColorId);
+
+        if (material.HasProperty(ColorId))
+            return material.GetColor(ColorId);
+
+        return Color.white;
+    }
+
+    private static void WriteMaterialColor(
+        Material material,
+        Color color
+    )
+    {
+        if (material.HasProperty(BaseColorId))
+            material.SetColor(BaseColorId, color);
+        else if (material.HasProperty(ColorId))
+            material.SetColor(ColorId, color);
+    }
+
+    private static void ConfigureMaterialForTransparency(
+        Material material
+    )
+    {
+        if (material.HasProperty("_Surface"))
+            material.SetFloat("_Surface", 1f);
+
+        if (material.HasProperty("_ZWrite"))
+            material.SetFloat("_ZWrite", 0f);
+
+        if (material.HasProperty("_AlphaClip"))
+            material.SetFloat("_AlphaClip", 0f);
+
+        if (material.HasProperty("_SrcBlend"))
+        {
+            material.SetFloat(
+                "_SrcBlend",
+                (float)UnityEngine.Rendering.BlendMode.SrcAlpha
+            );
+        }
+
+        if (material.HasProperty("_DstBlend"))
+        {
+            material.SetFloat(
+                "_DstBlend",
+                (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha
+            );
+        }
+
+        material.renderQueue = 3000;
+    }
+
+    private IEnumerator LowerDoppelToUserHeight(float duration)
+    {
+        if (
+            doppelgangerRoot == null
+            || doppelgangerChest == null
+            || playerHead == null
+        )
+        {
             yield break;
         }
 
-        float t = 0f;
-        while (t < duration)
+        float desiredChestY =
+            Mathf.Max(
+                minimumDoppelRootY,
+                playerHead.position.y
+                + doppelChestYOffsetFromHead
+            );
+
+        float verticalDifference =
+            desiredChestY
+            - doppelgangerChest.position.y;
+
+        Vector3 startPosition =
+            doppelgangerRoot.transform.position;
+
+        Vector3 targetPosition =
+            startPosition
+            + Vector3.up * verticalDifference;
+
+        targetPosition =
+            ClampDoppelRootY(targetPosition);
+
+        float safeDuration =
+            Mathf.Max(0.0001f, duration);
+
+        float elapsed = 0f;
+
+        while (elapsed < safeDuration)
         {
-            t += Time.deltaTime;
-            float a = Smooth01(t / duration);
-            doppelgangerRoot.transform.position = ClampMinY(Vector3.Lerp(startPos, endPos, a));
+            elapsed += Time.deltaTime;
+
+            float normalizedTime =
+                Mathf.Clamp01(elapsed / safeDuration);
+
+            float progress =
+                Smooth01(normalizedTime);
+
+            doppelgangerRoot.transform.position =
+                ClampDoppelRootY(
+                    Vector3.Lerp(
+                        startPosition,
+                        targetPosition,
+                        progress
+                    )
+                );
+
             yield return null;
         }
 
-        doppelgangerRoot.transform.position = endPos;
+        doppelgangerRoot.transform.position =
+            targetPosition;
     }
 
-    private IEnumerator FaceDoppelToPlayer_Speed(float degPerSecond)
+    private void SpinOrb(float degreesPerSecond)
     {
-        if (doppelgangerRoot == null || playerHead == null) yield break;
+        Vector3 axis =
+            spinAxisLocal.sqrMagnitude > 0.0001f
+            ? spinAxisLocal.normalized
+            : Vector3.up;
 
-        Vector3 toPlayer = playerHead.position - doppelgangerRoot.transform.position;
-        toPlayer.y = 0f;
-        if (toPlayer.sqrMagnitude < 0.0001f) yield break;
-
-        Quaternion targetRot = Quaternion.LookRotation(toPlayer.normalized, Vector3.up);
-
-        if (degPerSecond <= 0f)
-        {
-            doppelgangerRoot.transform.rotation = targetRot;
-            yield break;
-        }
-
-        while (true)
-        {
-            Vector3 v = playerHead.position - doppelgangerRoot.transform.position;
-            v.y = 0f;
-            if (v.sqrMagnitude > 0.0001f)
-                targetRot = Quaternion.LookRotation(v.normalized, Vector3.up);
-
-            float maxStep = degPerSecond * Time.deltaTime;
-            doppelgangerRoot.transform.rotation = Quaternion.RotateTowards(doppelgangerRoot.transform.rotation, targetRot, maxStep);
-
-            float remaining = Quaternion.Angle(doppelgangerRoot.transform.rotation, targetRot);
-            if (remaining <= 0.25f)
-                break;
-
-            yield return null;
-        }
-
-        doppelgangerRoot.transform.rotation = targetRot;
-    }
-
-    private void SpinSelf(float degreesPerSecond)
-    {
-        Vector3 axis = spinAxisLocal.normalized;
-        spinVisual.localRotation *= Quaternion.AngleAxis(degreesPerSecond * Time.deltaTime, axis);
+        spinVisual.localRotation *=
+            Quaternion.AngleAxis(
+                degreesPerSecond * Time.deltaTime,
+                axis
+            );
     }
 
     private float GetHeartbeatPulse()
     {
-        float phase = Mathf.Repeat(Time.time * heartbeatRate, 1f);
+        float phase =
+            Mathf.Repeat(
+                Time.time * heartbeatRate,
+                1f
+            );
+
         return heartbeatCurve.Evaluate(phase);
     }
 
-    private Vector3 GetRelativePos(float forwardMeters, float heightMeters, float rightMeters)
+    private Vector3 GetRelativePosition(
+        float forwardMeters,
+        float heightMeters,
+        float rightMeters
+    )
     {
-        Vector3 forward = FlattenForward(playerHead.forward);
-        Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+        Vector3 forward =
+            FlattenForward(playerHead.forward);
 
-        return playerHead.position + forward * forwardMeters + Vector3.up * heightMeters + right * rightMeters;
+        Vector3 right =
+            Vector3.Cross(
+                Vector3.up,
+                forward
+            ).normalized;
+
+        return playerHead.position
+               + forward * forwardMeters
+               + Vector3.up * heightMeters
+               + right * rightMeters;
+    }
+
+    private Vector3 ClampOrbCenterY(Vector3 position)
+    {
+        if (position.y < minimumOrbCenterY)
+            position.y = minimumOrbCenterY;
+
+        return position;
+    }
+
+    private Vector3 ClampDoppelRootY(Vector3 position)
+    {
+        if (position.y < minimumDoppelRootY)
+            position.y = minimumDoppelRootY;
+
+        return position;
+    }
+
+    private bool ValidateReferences()
+    {
+        if (nebOrb == null)
+        {
+            Debug.LogError(
+                "[A_OrbIntroSequence] Assign Neb Orb."
+            );
+
+            return false;
+        }
+
+        if (playerHead == null)
+        {
+            Debug.LogError(
+                "[A_OrbIntroSequence] Assign Player Head or ensure Camera.main exists."
+            );
+
+            return false;
+        }
+
+        return true;
     }
 
     private static Vector3 FlattenForward(Vector3 forward)
     {
         forward.y = 0f;
-        if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+
+        if (forward.sqrMagnitude < 0.0001f)
+            forward = Vector3.forward;
+
         return forward.normalized;
     }
 
-    private void EnforceMinDistance(float visualScale, float minDistOverride)
+    private static float Smooth01(float value)
     {
-        if (playerHead == null || nebOrb == null) return;
-
-        float baseMin = baseOrbRadiusMeters * visualScale + cameraSafetyMarginMeters;
-        float minDist = Mathf.Max(baseMin, minDistOverride);
-
-        Vector3 head = playerHead.position;
-        Vector3 delta = nebOrb.position - head;
-        float dist = delta.magnitude;
-
-        if (dist >= minDist) return;
-
-        Vector3 dir = (dist > 0.0001f) ? (delta / dist) : FlattenForward(playerHead.forward);
-        dir.y = 0f;
-        if (dir.sqrMagnitude < 0.0001f) dir = Vector3.forward;
-        dir.Normalize();
-
-        float need = (minDist - dist);
-        float push = Mathf.Min(need * lureBackAwayStrength, lureMaxBackAwaySpeed * Time.deltaTime);
-
-        nebOrb.position = ClampMinY(nebOrb.position + dir * push);
-    }
-
-    private Vector3 ClampMinY(Vector3 p)
-    {
-        if (p.y < minWorldY) p.y = minWorldY;
-        return p;
-    }
-
-    private static float Smooth01(float x)
-    {
-        x = Mathf.Clamp01(x);
-        return x * x * (3f - 2f * x);
-    }
-
-    public void StartSequenceFromCurrentOrbPosition()
-    {
-        if (m_sequence != null) StopCoroutine(m_sequence);
-        m_sequence = StartCoroutine(Sequence());
+        value = Mathf.Clamp01(value);
+        return value * value * (3f - 2f * value);
     }
 }

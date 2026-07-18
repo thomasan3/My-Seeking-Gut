@@ -1,151 +1,318 @@
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
 
 public class OrbLureController : MonoBehaviour
 {
     [Header("References")]
-    public Transform orbPivot;                 // Neb_orb_Pivot (NOT parented to rig)
-    public Transform playerHead;               // CenterEyeAnchor
-    public A_OrbIntroSequence orbSequence;     // your big sequence script
-    public GameObject orbRootToShowHide;       // optional root/mesh
+    public Transform orbPivot;
+    public Transform spinVisual;
+    public Transform playerHead;
+    public A_OrbIntroSequence orbSequence;
+    public GameObject orbRootToShowHide;
 
-    [Header("Start (Black)")]
-    public float startDelaySeconds = 1.0f;
+    [Header("Opening Delay")]
+    public float startDelaySeconds = 3f;
 
-    [Header("Spawn From Behind -> Right -> Front (LOCKED PATH)")]
+    [Header("Locked World-Space Entrance")]
     public float behindMeters = 1.2f;
-    public float rightMeters = 1.0f;
-    public float frontMeters = 2.6f;
+    public float rightMeters = 1.4f;
+    public float rightForwardMeters = 2.8f;
+    public float heightAboveHead = 1.2f;
+    public float entranceDurationSeconds = 2.5f;
+    public float rightHoldSeconds = 1.5f;
 
-    [Header("HEIGHT")]
-    [Tooltip("How high above the player's head the orb should be during the lure.")]
-    public float heightAboveHead = 1.2f;  // <- make this match your old scene feel (try 1.0–2.0)
+    [Header("Right-Side Travel")]
+    public float rightTravelForwardMeters = 5f;
+    public float rightTravelDurationSeconds = 10f;
 
-    [Header("Lure Motion")]
-    public float moveDurationSeconds = 12f;
-    public float moveSmoothing = 3.5f;
+    [Header("Centering Travel")]
+    public float finalForwardMeters = 8f;
+    public float finalRightMeters = 0f;
+    public float finalHeightAboveStartHead = 0.5f;
+    public float centerTravelDurationSeconds = 5f;
 
-    [Header("Spacing (player can’t get too close)")]
-    public float minSpacing = 1.6f;          // desired minimum distance
-    public float pushBackStrength = 2.5f;    // how strongly orb backs away when too close
-    public float maxPushBackPerSecond = 1.2f; // prevents teleport-y jumps
+    [Header("Orb Motion")]
+    public float idleSpinDegreesPerSecond = 8f;
+    public Vector3 spinAxisLocal = new Vector3(0f, 1f, 0f);
+    public float hoverAmplitude = 0.08f;
+    public float hoverSpeed = 0.6f;
 
-    [Header("Start the main animation when...")]
-    public float requiredDistanceToStart = 2.0f;
+    [Header("Participant Spacing")]
+    public float minimumSpacingMeters = 1.52f;
+    public float spacingCorrectionSpeed = 2f;
+    public float maximumCorrectionMetersPerSecond = 1.5f;
+
+    [Header("Main Sequence Trigger")]
+    public float requiredDistanceToStart = 1.8f;
     public float forceStartAfterSeconds = 120f;
 
-    private bool _lureDone;
-    private bool _sequenceStarted;
-    private float _timeSinceStop;
+    [Header("Debug")]
+    public bool autoStart = true;
 
-    // We lock the basis vectors at lure start so it doesn't "flip" when you turn
-    private Vector3 _lockedForward;
-    private Vector3 _lockedRight;
-    private Vector3 _lockedUp;
+    private Coroutine lureCoroutine;
+    private bool lureFinished;
+    private bool mainSequenceStarted;
+    private float stoppedTimer;
 
-    // Locked path points (world positions)
-    private Vector3 _pBehind, _pRight, _pFront;
+    private Vector3 lockedForward;
+    private Vector3 lockedRight;
+    private Vector3 startingHeadPosition;
 
-    void Start()
+    private Vector3 behindPoint;
+    private Vector3 upperRightPoint;
+    private Vector3 rightTravelEndPoint;
+    private Vector3 finalCenterPoint;
+
+    private void Awake()
     {
-        if (playerHead == null && Camera.main != null) playerHead = Camera.main.transform;
-
-        if (orbRootToShowHide != null) orbRootToShowHide.SetActive(false);
-
-        if (orbSequence != null) orbSequence.autoStart = false;
-
-        Invoke(nameof(BeginLure), startDelaySeconds);
+        if (playerHead == null && Camera.main != null)
+            playerHead = Camera.main.transform;
     }
 
-    void BeginLure()
+    private void Start()
     {
-        if (orbPivot == null || playerHead == null) return;
-
-        if (orbRootToShowHide != null) orbRootToShowHide.SetActive(true);
-
-        // LOCK direction at start (prevents snapping behind when player turns)
-        _lockedForward = playerHead.forward; _lockedForward.y = 0; _lockedForward.Normalize();
-        _lockedRight = playerHead.right; _lockedRight.y = 0; _lockedRight.Normalize();
-        _lockedUp = Vector3.up;
-
-        float y = playerHead.position.y + heightAboveHead;
-
-        _pBehind = new Vector3(playerHead.position.x, y, playerHead.position.z) - _lockedForward * behindMeters;
-        _pRight = new Vector3(playerHead.position.x, y, playerHead.position.z) + _lockedRight * rightMeters - _lockedForward * (behindMeters * 0.25f);
-        _pFront = new Vector3(playerHead.position.x, y, playerHead.position.z) + _lockedForward * frontMeters + _lockedRight * (rightMeters * 0.25f);
-
-        // Start at behind
-        orbPivot.position = _pBehind;
-
-        StartCoroutine(LureMove());
-    }
-
-    IEnumerator LureMove()
-    {
-        float t = 0f;
-
-        while (t < moveDurationSeconds)
+        if (!ValidateReferences())
         {
-            t += Time.deltaTime;
-            float u = Mathf.Clamp01(t / moveDurationSeconds);
-            float s = u * u * (3f - 2f * u);
+            enabled = false;
+            return;
+        }
 
-            // two-leg lerp: behind->right then right->front
-            Vector3 desired = (s < 0.5f)
-                ? Vector3.Lerp(_pBehind, _pRight, s / 0.5f)
-                : Vector3.Lerp(_pRight, _pFront, (s - 0.5f) / 0.5f);
+        orbSequence.autoStart = false;
 
-            // Apply spacing safety (never pushes behind; pushes along locked forward/right plane)
-            desired = ApplyMinSpacing(desired);
+        if (orbRootToShowHide != null)
+            orbRootToShowHide.SetActive(false);
 
-            orbPivot.position = Vector3.Lerp(orbPivot.position, desired, Time.deltaTime * moveSmoothing);
+        if (autoStart)
+            lureCoroutine = StartCoroutine(RunLure());
+    }
+
+    private void Update()
+    {
+        if (lureFinished && !mainSequenceStarted)
+        {
+            SpinOrb(idleSpinDegreesPerSecond);
+            MaintainMinimumSpacing();
+
+            stoppedTimer += Time.deltaTime;
+
+            float distance = Vector3.Distance(playerHead.position, orbPivot.position);
+            bool participantArrived = distance <= requiredDistanceToStart;
+            bool safetyTimeoutReached = stoppedTimer >= forceStartAfterSeconds;
+
+            if (participantArrived || safetyTimeoutReached)
+                StartMainSequence();
+        }
+    }
+
+    public void BeginLure()
+    {
+        if (lureCoroutine != null)
+            StopCoroutine(lureCoroutine);
+
+        lureCoroutine = StartCoroutine(RunLure());
+    }
+
+    private IEnumerator RunLure()
+    {
+        lureFinished = false;
+        mainSequenceStarted = false;
+        stoppedTimer = 0f;
+
+        if (startDelaySeconds > 0f)
+            yield return new WaitForSeconds(startDelaySeconds);
+
+        LockPathToStartingPose();
+        BuildWorldSpacePath();
+
+        orbPivot.position = behindPoint;
+
+        if (orbRootToShowHide != null)
+            orbRootToShowHide.SetActive(true);
+
+        yield return MoveAlongSegment(behindPoint, upperRightPoint, entranceDurationSeconds);
+        yield return HoldAtPoint(upperRightPoint, rightHoldSeconds);
+        yield return MoveAlongSegment(upperRightPoint, rightTravelEndPoint, rightTravelDurationSeconds);
+        yield return MoveAlongSegment(rightTravelEndPoint, finalCenterPoint, centerTravelDurationSeconds);
+
+        orbPivot.position = finalCenterPoint;
+        lureFinished = true;
+        stoppedTimer = 0f;
+    }
+
+    private void LockPathToStartingPose()
+    {
+        startingHeadPosition = playerHead.position;
+
+        lockedForward = playerHead.forward;
+        lockedForward.y = 0f;
+
+        if (lockedForward.sqrMagnitude < 0.0001f)
+            lockedForward = Vector3.forward;
+
+        lockedForward.Normalize();
+        lockedRight = Vector3.Cross(Vector3.up, lockedForward).normalized;
+    }
+
+    private void BuildWorldSpacePath()
+    {
+        behindPoint =
+            startingHeadPosition
+            - lockedForward * behindMeters
+            + Vector3.up * heightAboveHead;
+
+        upperRightPoint =
+            startingHeadPosition
+            + lockedForward * rightForwardMeters
+            + lockedRight * rightMeters
+            + Vector3.up * heightAboveHead;
+
+        rightTravelEndPoint =
+            startingHeadPosition
+            + lockedForward * rightTravelForwardMeters
+            + lockedRight * rightMeters
+            + Vector3.up * heightAboveHead;
+
+        finalCenterPoint =
+            startingHeadPosition
+            + lockedForward * finalForwardMeters
+            + lockedRight * finalRightMeters
+            + Vector3.up * finalHeightAboveStartHead;
+    }
+
+    private IEnumerator MoveAlongSegment(Vector3 from, Vector3 to, float duration)
+    {
+        float safeDuration = Mathf.Max(0.0001f, duration);
+        float elapsed = 0f;
+
+        while (elapsed < safeDuration)
+        {
+            elapsed += Time.deltaTime;
+
+            float normalizedTime = Mathf.Clamp01(elapsed / safeDuration);
+            float easedTime = Smooth01(normalizedTime);
+
+            Vector3 pathPosition = Vector3.Lerp(from, to, easedTime);
+            float hoverOffset = Mathf.Sin(Time.time * hoverSpeed) * hoverAmplitude;
+            pathPosition += Vector3.up * hoverOffset;
+
+            orbPivot.position = pathPosition;
+            MaintainMinimumSpacing();
+            FaceBackAlongLockedPath();
+            SpinOrb(idleSpinDegreesPerSecond);
 
             yield return null;
         }
 
-        _lureDone = true;
-        _timeSinceStop = 0f;
+        orbPivot.position = to;
     }
 
-    void Update()
+    private IEnumerator HoldAtPoint(Vector3 point, float duration)
     {
-        if (_sequenceStarted || !_lureDone || orbPivot == null || playerHead == null) return;
+        float elapsed = 0f;
 
-        _timeSinceStop += Time.deltaTime;
-
-        float dist = Vector3.Distance(playerHead.position, orbPivot.position);
-        bool closeEnough = dist <= requiredDistanceToStart;
-        bool forced = _timeSinceStop >= forceStartAfterSeconds;
-
-        if (closeEnough || forced)
+        while (elapsed < duration)
         {
-            _sequenceStarted = true;
+            elapsed += Time.deltaTime;
 
-            if (orbSequence != null)
-                orbSequence.StartSequenceFromCurrentOrbPosition();
+            float hoverOffset = Mathf.Sin(Time.time * hoverSpeed) * hoverAmplitude;
+            orbPivot.position = point + Vector3.up * hoverOffset;
+
+            MaintainMinimumSpacing();
+            FaceBackAlongLockedPath();
+            SpinOrb(idleSpinDegreesPerSecond);
+
+            yield return null;
         }
+
+        orbPivot.position = point;
     }
 
-    Vector3 ApplyMinSpacing(Vector3 desired)
+    private void MaintainMinimumSpacing()
     {
-        Vector3 head = playerHead.position;
-        Vector3 toOrb = desired - head;
-        float dist = toOrb.magnitude;
+        Vector3 headPosition = playerHead.position;
+        Vector3 fromHeadToOrb = orbPivot.position - headPosition;
+        float currentDistance = fromHeadToOrb.magnitude;
 
-        if (dist < 0.001f) toOrb = _lockedForward;
-        else toOrb /= dist;
+        if (currentDistance >= minimumSpacingMeters)
+            return;
 
-        if (dist >= minSpacing) return desired;
+        Vector3 correctionDirection = Vector3.ProjectOnPlane(fromHeadToOrb, Vector3.up);
 
-        float need = (minSpacing - dist);
+        if (correctionDirection.sqrMagnitude < 0.0001f)
+            correctionDirection = lockedForward;
 
-        // push away, but limit per second to prevent "teleport snap"
-        float push = Mathf.Min(need * pushBackStrength, maxPushBackPerSecond * Time.deltaTime);
+        correctionDirection.Normalize();
 
-        // Push in a direction that can't go "behind": prefer pushing forward/right plane
-        Vector3 pushDir = (Vector3.ProjectOnPlane(toOrb, Vector3.up)).normalized;
-        if (pushDir.sqrMagnitude < 0.0001f) pushDir = _lockedForward;
+        if (Vector3.Dot(correctionDirection, lockedForward) < 0f)
+            correctionDirection = lockedForward;
 
-        return desired + pushDir * push;
+        float missingDistance = minimumSpacingMeters - currentDistance;
+        float correction = Mathf.Min(
+            missingDistance * spacingCorrectionSpeed,
+            maximumCorrectionMetersPerSecond
+        ) * Time.deltaTime;
+
+        orbPivot.position += correctionDirection * correction;
+    }
+
+    private void FaceBackAlongLockedPath()
+    {
+        orbPivot.rotation = Quaternion.LookRotation(-lockedForward, Vector3.up);
+    }
+
+    private void SpinOrb(float degreesPerSecond)
+    {
+        if (spinVisual == null)
+            return;
+
+        Vector3 axis = spinAxisLocal.sqrMagnitude > 0.0001f
+            ? spinAxisLocal.normalized
+            : Vector3.up;
+
+        spinVisual.localRotation *= Quaternion.AngleAxis(
+            degreesPerSecond * Time.deltaTime,
+            axis
+        );
+    }
+
+    private void StartMainSequence()
+    {
+        if (mainSequenceStarted)
+            return;
+
+        mainSequenceStarted = true;
+        orbSequence.BeginMainSequenceFromCurrentPosition();
+    }
+
+    private bool ValidateReferences()
+    {
+        if (orbPivot == null)
+        {
+            Debug.LogError("[OrbLureController] Assign Orb Pivot.");
+            return false;
+        }
+
+        if (playerHead == null)
+        {
+            Debug.LogError("[OrbLureController] Assign Player Head or ensure Camera.main exists.");
+            return false;
+        }
+
+        if (orbSequence == null)
+        {
+            Debug.LogError("[OrbLureController] Assign A_OrbIntroSequence.");
+            return false;
+        }
+
+        if (spinVisual == null)
+            spinVisual = orbSequence.spinVisual;
+
+        return true;
+    }
+
+    private static float Smooth01(float value)
+    {
+        value = Mathf.Clamp01(value);
+        return value * value * (3f - 2f * value);
     }
 }
