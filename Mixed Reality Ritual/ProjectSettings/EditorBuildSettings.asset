@@ -11,9 +11,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/Ariana.unity
     guid: a36f27a761bebad4ab0cef689be23e3b
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Doppleganger Delay.unity
     guid: 07ef214b0aff2f742a04030600375553
+  - enabled: 1
+    path: Assets/Scenes/Final Ariana/Ari test.unity
+    guid: 51ed9af4f2d32654398a0baaee500d63
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: aef179e138b75774d8209f8d4ccaafb7, type: 2}
