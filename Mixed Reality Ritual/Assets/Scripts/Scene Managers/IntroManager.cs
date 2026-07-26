@@ -16,12 +16,23 @@ public class IntroManager : MonoBehaviour
     [SerializeField] private GameObject dop_light;
     [SerializeField] private OVRScreenFade screenFade;
     [SerializeField] private GameObject whiteFadeBall;
+
+    [SerializeField] private OVRManager ovrManager;
+    [SerializeField] private GameObject canalOpenning;
+    [SerializeField] private GameObject canalSecondary;
+    [SerializeField] private CanalPathAnimator canalPathAnimator;
     private float obj_fade_time = 7f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         EventManager.GameStateChange += HandleStateChange;
+        dop.SetActive(false);
+        floor.SetActive(false);
+        dop_light.SetActive(false);
+        canalOpenning.SetActive(false);
+        canalSecondary.SetActive(false);
+        whiteFadeBall.SetActive(false);
     }
 
     // Update is called once per frame
@@ -60,6 +71,18 @@ public class IntroManager : MonoBehaviour
         {
             dopBones.GetComponent<MirrorDelayed>().SyncUp();
             fader.StartFadeRenderer(dopMesh,obj_fade_time*2,0f,1f);
+        }
+
+        if(state == "Fall")
+        {
+            //ovrManager.usePositionTracking = false;
+            canalOpenning.SetActive(true);
+            canalPathAnimator.Play();
+        }
+
+        if(state == "CanalRender")
+        {
+            canalSecondary.SetActive(true); 
         }
 
         if(state == "Whiteness")

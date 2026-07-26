@@ -1025,9 +1025,7 @@
         "dependencies": [
           {
             "name": "BoxCollider",
-            "scenes": [
-              "Assets/Scenes/Doppleganger Delay.unity"
-            ],
+            "scenes": [],
             "dependencyType": 0,
             "icon": null
           },
@@ -1045,8 +1043,10 @@
           },
           {
             "name": "Collider",
-            "scenes": [],
-            "dependencyType": 1,
+            "scenes": [
+              "Assets/Scenes/Doppleganger Delay.unity"
+            ],
+            "dependencyType": 0,
             "icon": null
           },
           {
@@ -1069,9 +1069,7 @@
           },
           {
             "name": "MeshCollider",
-            "scenes": [
-              "Assets/Scenes/Doppleganger Delay.unity"
-            ],
+            "scenes": [],
             "dependencyType": 0,
             "icon": null
           },
@@ -1083,9 +1081,7 @@
           },
           {
             "name": "Rigidbody",
-            "scenes": [
-              "Assets/Scenes/Doppleganger Delay.unity"
-            ],
+            "scenes": [],
             "dependencyType": 0,
             "icon": null
           },

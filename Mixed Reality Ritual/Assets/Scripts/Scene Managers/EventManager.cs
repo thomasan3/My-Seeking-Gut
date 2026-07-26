@@ -28,6 +28,7 @@ public class EventManager : MonoBehaviour
     {
         gameState = events[eventIndex].name;
         waitingTime = events[eventIndex].seconds;
+        CanalPathAnimator.CheckpointReached += NextEvent;
     }
 
     public void NextEvent()

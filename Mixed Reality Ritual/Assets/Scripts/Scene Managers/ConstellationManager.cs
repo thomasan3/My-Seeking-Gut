@@ -21,6 +21,10 @@ public class ConstellationManager : MonoBehaviour
     void Start()
     {
         EventManager.GameStateChange += HandleStateChange;
+        starbox.SetActive(false);
+        lights.SetActive(false);
+        constellationScene.SetActive(false);
+        ritObj.SetActive(false);
     }
 
     // Update is called once per frame
